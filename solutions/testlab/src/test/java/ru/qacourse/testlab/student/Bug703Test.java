@@ -49,7 +49,8 @@ public class Bug703Test {
         loginInBrowser(token);
         open("/product/1");
         $("[data-testid=add-to-cart]").click();
-        $("[data-testid=toast]").shouldBe(visible);
+        // Ждём именно сообщения об успехе: оно появляется, когда сервер уже ответил
+        $("[data-testid=toast]").shouldBe(visible).shouldHave(text("Добавлено"));
         int quantity = given().baseUri(base).auth().oauth2(token).get("/api/cart")
                 .then().statusCode(200).extract().path("totalQuantity");
         assertThat(quantity).isEqualTo(1);

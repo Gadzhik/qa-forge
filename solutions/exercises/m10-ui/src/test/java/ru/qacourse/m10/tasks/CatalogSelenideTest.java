@@ -9,6 +9,7 @@ import ru.qacourse.support.ShopConfig;
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.CollectionCondition.*;
 import static com.codeborne.selenide.Selenide.*;
+import static com.codeborne.selenide.WebDriverConditions.urlContaining;
 import static org.assertj.core.api.Assertions.fail;
 
 import com.codeborne.selenide.ElementsCollection;
@@ -52,6 +53,9 @@ public class CatalogSelenideTest {
         open("/");
         $("[data-testid=sort-select]").selectOption("Сначала дорогие");
         $("[data-testid=search-button]").click();
+        // Ждём, что открылась НОВАЯ страница с сортировкой: старая тоже содержит 20 карточек,
+        // и без этого ожидания можно прочитать цены ещё со старой страницы
+        webdriver().shouldHave(urlContaining("sort=price"));
         $$("[data-testid=product-card]").shouldHave(size(20));
         List<Double> prices = $$("[data-testid=product-price]").texts().stream()
                 .map(t -> Double.parseDouble(t.replace("₽", "").trim()))
