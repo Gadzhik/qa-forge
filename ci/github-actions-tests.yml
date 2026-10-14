@@ -16,9 +16,9 @@ jobs:
   tests:
     runs-on: ubuntu-latest    # виртуальная машина GitHub с Ubuntu
     steps:
-      - uses: actions/checkout@v4            # скачать код репозитория
+      - uses: actions/checkout@v7            # скачать код репозитория
 
-      - uses: actions/setup-java@v4          # установить JDK 21 и кэшировать ~/.m2
+      - uses: actions/setup-java@v6          # установить JDK 21 и кэшировать ~/.m2
         with:
           distribution: temurin
           java-version: '21'
@@ -37,7 +37,7 @@ jobs:
         if: always()                         # даже если тесты упали
         run: ./mvnw -B -f exercises/m14-framework/pom.xml allure:report
 
-      - uses: actions/upload-artifact@v4     # сохранить отчёт как артефакт сборки
+      - uses: actions/upload-artifact@v7     # сохранить отчёт как артефакт сборки
         if: always()
         with:
           name: allure-report
