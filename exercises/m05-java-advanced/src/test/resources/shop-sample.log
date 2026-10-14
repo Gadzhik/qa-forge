@@ -1,0 +1,10 @@
+2024-05-12T12:00:01Z INFO [main] ShopApplication - Started ShopApplication in 4.1 seconds
+2024-05-12T12:01:15Z INFO [http-1] OrderService - order created id=1 user=user total=521.82
+2024-05-12T12:01:16Z INFO [http-1] PaymentClient - payment -> http://localhost:8081/fake-payment/api/payments order=1 amount=521.82
+2024-05-12T12:01:16Z INFO [http-1] PaymentClient - payment <- order=1 status=APPROVED
+2024-05-12T12:02:40Z WARN [http-3] ApiExceptionHandler - POST /api/cart/items -> 400 Количество должно быть больше 0
+2024-05-12T12:03:02Z ERROR [http-4] OrderService - payment service error for order 2: Connection refused
+2024-05-12T12:03:05Z INFO [http-5] OrderService - order created id=3 user=anna total=289.90
+2024-05-12T12:04:11Z ERROR [http-2] ApiExceptionHandler - GET /api/products/999 -> 500
+2024-05-12T12:04:11Z ERROR [kitchen-1] KitchenService - kitchen failed for order 3
+2024-05-12T12:05:00Z INFO [http-1] OrderService - order created id=4 user=user total=99.00

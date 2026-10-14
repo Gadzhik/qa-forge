@@ -11,6 +11,8 @@ allure-results/
 allure-report/
 logs/
 *.log
+# ...но учебные лог-файлы в ресурсах заданий нужны (m05: разбор лога)
+!**/src/**/resources/**/*.log
 # Системные файлы
 .DS_Store
 Thumbs.db
