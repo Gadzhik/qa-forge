@@ -3,6 +3,7 @@ package ru.qacourse.m10.pages;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.util.List;
 
@@ -32,6 +33,9 @@ public class CatalogPage extends BasePage {
     public CatalogPage addToCart(long productId) {
         WebElement card = driver.findElement(By.cssSelector("[data-testid=product-card][data-product-id='" + productId + "']"));
         card.findElement(testId("add-to-cart")).click();
+        // Сначала ждём, что старая страница ушла (card «протух»), иначе при втором добавлении
+        // visible("flash-message") увидит сообщение ещё от первого и вернётся до перезагрузки
+        wait.until(ExpectedConditions.stalenessOf(card));
         visible("flash-message");
         return this;
     }
