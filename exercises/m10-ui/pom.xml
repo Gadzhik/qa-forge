@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Модуль 10: UI-тесты — Selenium WebDriver и Selenide.
+  Ваши тесты: src/test/java/ru/qacourse/m10/tasks. Page Object и помощники: src/main/java/ru/qacourse/m10.
+  Из IDE тесты открывают настоящий браузер против http://localhost:8081 (запустите курс скриптом start).
+  Проверки (*Check) запускают браузер без окна (headless) и свой экземпляр QA Burger.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ru.qacourse</groupId>
+        <artifactId>exercises-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+    <artifactId>m10-ui</artifactId>
+    <name>m10 — UI-тесты</name>
+
+    <dependencies>
+        <!-- Selenide включает в себя Selenium WebDriver -->
+        <dependency><groupId>com.codeborne</groupId><artifactId>selenide</artifactId></dependency>
+        <dependency><groupId>io.rest-assured</groupId><artifactId>rest-assured</artifactId></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId></dependency>
+        <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId></dependency>
+        <dependency><groupId>org.apache.pdfbox</groupId><artifactId>pdfbox</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.apache.poi</groupId><artifactId>poi-ooxml</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>ru.qacourse</groupId><artifactId>test-support</artifactId></dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <!-- при запуске через Maven — браузер без окна -->
+                        <selenide.headless>true</selenide.headless>
+                        <headless>true</headless>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

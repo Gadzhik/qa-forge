@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Drag & Drop')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Drag & Drop</h1>
+<p>Перетащите бургер на тарелку. Реализовано на событиях мыши, поэтому работает и с Selenium Actions.</p>
+<div class="dnd">
+  <div id="draggable" class="draggable" data-testid="draggable">🍔</div>
+  <div id="droppable" class="droppable" data-testid="droppable">Тарелка</div>
+</div>
+<p>Статус: <b id="dnd-status" data-testid="dnd-status">не перетащено</b></p>
+<h2>Сортируемый список</h2>
+<ol id="sortable" data-testid="sortable">
+  <li draggable="true" data-testid="sortable-item">Булка</li>
+  <li draggable="true" data-testid="sortable-item">Котлета</li>
+  <li draggable="true" data-testid="sortable-item">Сыр</li>
+  <li draggable="true" data-testid="sortable-item">Салат</li>
+</ol>
+<script>
+(function () {
+  const d = document.getElementById('draggable'), t = document.getElementById('droppable');
+  let dragging = false, sx = 0, sy = 0;
+  d.addEventListener('mousedown', e => { dragging = true; sx = e.clientX; sy = e.clientY; e.preventDefault(); });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    d.style.transform = `translate(${e.clientX - sx}px, ${e.clientY - sy}px)`;
+  });
+  document.addEventListener('mouseup', e => {
+    if (!dragging) return;
+    dragging = false;
+    const r = t.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    d.style.transform = '';
+    if (inside) { t.appendChild(d); t.classList.add('dropped'); document.getElementById('dnd-status').textContent = 'на тарелке'; }
+  });
+  // HTML5 drag & drop для списка
+  let src = null;
+  document.querySelectorAll('#sortable li').forEach(li => {
+    li.addEventListener('dragstart', () => { src = li; });
+    li.addEventListener('dragover', e => e.preventDefault());
+    li.addEventListener('drop', e => { e.preventDefault(); if (src && src !== li) li.parentNode.insertBefore(src, li); });
+  });
+})();
+</script>
+</main>
+</body>
+</html>

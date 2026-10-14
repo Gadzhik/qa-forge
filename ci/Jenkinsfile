@@ -1,0 +1,30 @@
+// Простой Jenkinsfile: собрать и прогнать тесты, опубликовать отчёты (урок 15.8)
+pipeline {
+    agent any                                   // выполнять на любом доступном агенте
+
+    tools {
+        jdk 'jdk21'                             // JDK, настроенный в Manage Jenkins → Tools под именем jdk21
+    }
+
+    stages {
+        stage('Тесты') {
+            steps {
+                // isUnix() — Linux/macOS агент, иначе Windows (bat)
+                script {
+                    if (isUnix()) {
+                        sh './mvnw -B -f exercises/m14-framework/pom.xml test'
+                    } else {
+                        bat 'mvnw.cmd -B -f exercises/m14-framework/pom.xml test'
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {                                // выполнить всегда, даже если тесты упали
+            junit testResults: 'exercises/m14-framework/target/surefire-reports/*.xml', allowEmptyResults: true
+            allure results: [[path: 'exercises/m14-framework/target/allure-results']]   // плагин Allure Jenkins
+        }
+    }
+}

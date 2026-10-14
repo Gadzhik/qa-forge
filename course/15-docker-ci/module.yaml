@@ -1,0 +1,3 @@
+title: "Docker и CI/CD"
+summary: "Docker и Dockerfile, Docker Compose и тесты в контейнерах, Testcontainers, Selenium Grid и Selenoid, CI/CD: GitHub Actions, GitLab CI с runner, Jenkins с параметризованным пайплайном"
+icon: "🐳"

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Iframe')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Iframe</h1>
+<p>Ниже — встроенная страница. Чтобы работать с её элементами, тест должен «переключиться» внутрь iframe.</p>
+<p>Текст снаружи: <b data-testid="outer-text">Я снаружи</b></p>
+<iframe id="inner-frame" name="inner" data-testid="inner-frame" src="/playground/iframe-inner" width="100%" height="220"></iframe>
+</main>
+</body>
+</html>

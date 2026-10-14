@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Вспомогательная библиотека для проверок заданий и Test Lab:
+  запускает QA Burger внутри теста и прогоняет тесты студента на версии "с багом" и "без бага".
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ru.qacourse</groupId>
+        <artifactId>exercises-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+    <artifactId>test-support</artifactId>
+    <name>Поддержка проверок</name>
+
+    <dependencies>
+        <dependency><groupId>ru.qacourse</groupId><artifactId>shop-app</artifactId></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId></dependency>
+        <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId></dependency>
+        <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId></dependency>
+    </dependencies>
+</project>

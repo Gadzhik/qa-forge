@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Заказ')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1>Заказ № <span data-testid="order-id" th:text="${order.id}"></span></h1>
+    <p>Статус: <b class="status" id="order-status" data-testid="order-status"
+                  th:attr="data-order-id=${order.id}" th:text="${order.status}">NEW</b>
+        <span class="spinner" id="status-spinner" data-testid="status-spinner" hidden>⏳</span></p>
+    <table class="table" data-testid="order-items">
+        <thead><tr><th>Товар</th><th>Цена</th><th>Кол-во</th></tr></thead>
+        <tbody>
+        <tr th:each="i : ${order.items}" data-testid="order-item">
+            <td th:text="${i.name}"></td><td th:text="${i.price}"></td><td th:text="${i.quantity}"></td>
+        </tr>
+        </tbody>
+    </table>
+    <p>Сумма: <span data-testid="order-subtotal" th:text="${order.subtotal}"></span></p>
+    <p th:if="${order.promoCode}">Промокод <b th:text="${order.promoCode}"></b>, скидка:
+        <span data-testid="order-discount" th:text="${order.discount}"></span></p>
+    <p class="total">К оплате: <b data-testid="order-total" th:text="${order.total} + ' ₽'"></b></p>
+    <div class="row">
+        <form th:action="@{/orders/{id}/pay(id=${order.id})}" method="post">
+            <button type="submit" class="btn" data-testid="pay-button"
+                    th:disabled="${order.status.name() != 'NEW' and order.status.name() != 'PAYMENT_FAILED'}">Оплатить</button>
+        </form>
+        <form th:action="@{/orders/{id}/cancel(id=${order.id})}" method="post">
+            <button type="submit" class="btn btn--secondary" data-testid="cancel-button">Отменить</button>
+        </form>
+        <a th:href="@{/api/orders/{id}/receipt.pdf(id=${order.id})}" data-testid="receipt-link">⬇ Чек PDF</a>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

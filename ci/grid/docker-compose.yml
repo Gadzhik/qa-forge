@@ -1,0 +1,16 @@
+# Selenium Grid в Docker для UI-тестов (урок 15.4).
+#   docker compose -f ci/grid/docker-compose.yml up -d
+#   Консоль Grid: http://localhost:4444/ui     Наблюдать за браузером: http://localhost:7900 (пароль secret)
+# В тестах Selenide:  -Dselenide.remote=http://localhost:4444/wd/hub
+services:
+  chrome:
+    image: selenium/standalone-chrome:latest
+    shm_size: 2gb                      # Chrome нужна общая память, иначе вкладки падают
+    ports:
+      - "4444:4444"                    # WebDriver-сервер Grid
+      - "7900:7900"                    # noVNC: смотреть на экран браузера через веб
+    environment:
+      SE_NODE_MAX_SESSIONS: 4          # до 4 браузеров одновременно
+      SE_NODE_OVERRIDE_MAX_SESSIONS: "true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # чтобы браузер в контейнере видел QA Burger на вашем компьютере

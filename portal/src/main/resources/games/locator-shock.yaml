@@ -1,0 +1,173 @@
+# Locator Shock: v1 — исходная вёрстка, v2 — после «редизайна».
+# target / targetV2 — CSS-селектор ПРАВИЛЬНОГО элемента в каждой версии (ключ ответа, студенту не показывается).
+levels:
+  - title: Кнопка входа
+    task: Найдите кнопку **«Войти»**. После редизайна у неё поменяются классы и позиция.
+    v1: |
+      <form>
+        <input name="username" placeholder="Логин">
+        <input name="password" type="password" placeholder="Пароль">
+        <button class="btn btn-primary" data-testid="login-submit">Войти</button>
+        <button class="btn" type="button">Забыли пароль?</button>
+      </form>
+    v2: |
+      <form class="auth">
+        <div class="row"><input name="username" placeholder="Логин"></div>
+        <div class="row"><input name="password" type="password" placeholder="Пароль"></div>
+        <div class="actions">
+          <button class="link" type="button">Забыли пароль?</button>
+          <button class="ui-button ui-button--accent" data-testid="login-submit">Войти</button>
+        </div>
+      </form>
+    target: "[data-testid='login-submit']"
+    targetV2: "[data-testid='login-submit']"
+    answer: "[data-testid='login-submit']"
+    hint: Есть атрибут, который специально сделан для тестов и не меняется при редизайне.
+    explain: "`[data-testid='login-submit']` переживает любые изменения классов и порядка. А `.btn-primary` или `form > button:first-of-type` — нет."
+
+  - title: Поле email
+    task: Найдите поле ввода **email**. Тестовых атрибутов здесь нет — ищите устойчивый признак.
+    v1: |
+      <div class="form">
+        <label>Имя <input type="text" name="name" class="inp"></label>
+        <label>Email <input type="email" name="email" class="inp"></label>
+        <label>Телефон <input type="tel" name="phone" class="inp"></label>
+      </div>
+    v2: |
+      <div class="form-v2">
+        <div class="field"><span>Email</span><input type="email" name="email" class="text-field"></div>
+        <div class="field"><span>Имя</span><input type="text" name="name" class="text-field"></div>
+        <div class="field"><span>Телефон</span><input type="tel" name="phone" class="text-field"></div>
+      </div>
+    target: "input[name='email']"
+    targetV2: "input[name='email']"
+    answer: "input[name='email']"
+    hint: У полей формы есть атрибут, который отправляется на сервер, — его меняют редко.
+    explain: "`input[name='email']` или `[type='email']` — смысловые атрибуты. Позиция (`label:nth-child(2) input`) сломалась, когда поле переехало наверх."
+
+  - title: Цена второго бургера
+    task: Найдите элемент с **ценой «Веганбургера»** (не первого товара, а именно этого).
+    v1: |
+      <ul class="catalog">
+        <li class="item"><h4>Чизбургер</h4><span class="price">249 ₽</span></li>
+        <li class="item"><h4>Веганбургер</h4><span class="price">319 ₽</span></li>
+        <li class="item"><h4>Кола</h4><span class="price">129 ₽</span></li>
+      </ul>
+    v2: |
+      <div class="grid">
+        <article class="card"><h3 class="title">Двойной бургер</h3><p class="cost">389 ₽</p></article>
+        <article class="card"><h3 class="title">Чизбургер</h3><p class="cost">249 ₽</p></article>
+        <article class="card"><h3 class="title">Веганбургер</h3><p class="cost">319 ₽</p></article>
+      </div>
+    target: "li:nth-child(2) .price"
+    targetV2: "article:nth-child(3) .cost"
+    answer: "//*[text()='Веганбургер']/following-sibling::*[1]"
+    hint: "Найдите карточку по тексту названия, а цену — внутри неё. Это задача для XPath: `//*[text()='...']/..//...` или `following-sibling`."
+    explain: |
+      Порядок товаров и классы поменялись, а название осталось. Устойчивый вариант:
+      `//*[text()='Веганбургер']/following-sibling::*[1]` — «первый соседний элемент после заголовка с этим текстом».
+      В реальном проекте лучше попросить разработчиков добавить `data-testid`.
+
+  - title: Кнопка удаления в строке таблицы
+    task: Найдите кнопку **«Удалить»** в строке пользователя **petrov**.
+    v1: |
+      <table>
+        <tr><th>Логин</th><th>Роль</th><th></th></tr>
+        <tr><td>ivanov</td><td>USER</td><td><button>Удалить</button></td></tr>
+        <tr><td>petrov</td><td>ADMIN</td><td><button>Удалить</button></td></tr>
+        <tr><td>sidorov</td><td>USER</td><td><button>Удалить</button></td></tr>
+      </table>
+    v2: |
+      <table class="users">
+        <thead><tr><th>Роль</th><th>Логин</th><th>Действия</th></tr></thead>
+        <tbody>
+          <tr><td>USER</td><td>sidorov</td><td><button>Изменить</button> <button>Удалить</button></td></tr>
+          <tr><td>ADMIN</td><td>petrov</td><td><button>Изменить</button> <button>Удалить</button></td></tr>
+        </tbody>
+      </table>
+    target: "tr:nth-child(3) button"
+    targetV2: "tbody tr:nth-child(2) button:nth-of-type(2)"
+    answer: "//tr[td[text()='petrov']]//button[text()='Удалить']"
+    hint: "Найдите строку `tr`, в которой есть ячейка с текстом petrov, а в ней — кнопку с текстом «Удалить»."
+    explain: |
+      `//tr[td[text()='petrov']]//button[text()='Удалить']` — не зависит ни от порядка строк, ни от порядка колонок, ни от появления новых кнопок.
+
+  - title: Ссылка «Корзина»
+    task: Найдите ссылку на **корзину**. Текст ссылки после редизайна изменится на иконку со счётчиком.
+    v1: |
+      <nav>
+        <a href="/">Главная</a>
+        <a href="/catalog">Каталог</a>
+        <a href="/cart">Корзина</a>
+      </nav>
+    v2: |
+      <header>
+        <a href="/" class="logo">QA Burger</a>
+        <a href="/catalog">Меню</a>
+        <a href="/cart" aria-label="Корзина" class="icon-link">🛒 <span class="count">3</span></a>
+      </header>
+    target: "a[href='/cart']"
+    targetV2: "a[href='/cart']"
+    answer: "a[href='/cart']"
+    hint: Текст поменяется, а куда ведёт ссылка — нет.
+    explain: "`a[href='/cart']` устойчив. Поиск по тексту «Корзина» сломается — в v2 там иконка и цифра (хотя `aria-label` тоже хороший вариант)."
+
+  - title: Сообщение об ошибке
+    task: Найдите **сообщение об ошибке** формы (не подсказку).
+    v1: |
+      <div class="form">
+        <input name="promo" value="SALE100">
+        <div class="msg msg-info">Промокод можно применить один раз</div>
+        <div class="msg msg-error" role="alert">Промокод не найден</div>
+      </div>
+    v2: |
+      <div class="form">
+        <div class="notice notice--error" role="alert" data-testid="promo-error">Промокод не найден</div>
+        <input name="promo" value="SALE100">
+        <p class="notice">Промокод можно применить один раз</p>
+      </div>
+    target: ".msg-error"
+    targetV2: "[role='alert']"
+    answer: "[role='alert']"
+    hint: Есть атрибут доступности (accessibility), который сообщает экранным дикторам, что это предупреждение.
+    explain: "`[role='alert']` — семантический атрибут, его сохраняют при редизайне. Классы `.msg-error` → `.notice--error` поменялись."
+
+  - title: Чекбокс согласия
+    task: Найдите **чекбокс** «Согласен с условиями».
+    v1: |
+      <label><input type="checkbox" id="news"> Получать новости</label><br>
+      <label><input type="checkbox" id="agree"> Согласен с условиями</label>
+    v2: |
+      <div class="checks">
+        <label for="terms-agree" class="check">Согласен с условиями</label>
+        <input type="checkbox" id="terms-agree" name="agree">
+        <label for="newsletter" class="check">Получать новости</label>
+        <input type="checkbox" id="newsletter" name="news">
+      </div>
+    target: "#agree"
+    targetV2: "#terms-agree"
+    answer: "//input[@id=//label[contains(.,'Согласен')]/@for or parent::label[contains(.,'Согласен')]]"
+    hint: "id поменялся. Но связь «подпись → поле» осталась: в v1 поле внутри label, в v2 — label for. XPath может найти поле по тексту подписи в обоих случаях? Попробуйте `//input[...]` с `or`."
+    explain: |
+      Один из вариантов: `//input[@id=//label[contains(.,'Согласен')]/@for or parent::label[contains(.,'Согласен')]]`.
+      Сложно? Именно поэтому договариваются с разработчиками о `data-testid` — и редизайн не ломает тесты.
+
+  - title: Выбор из списка
+    task: Найдите **вариант доставки «Самовывоз»** в списке.
+    v1: |
+      <select name="delivery">
+        <option value="courier">Курьер</option>
+        <option value="pickup">Самовывоз</option>
+      </select>
+    v2: |
+      <select name="delivery" class="select-lg">
+        <option value="">Выберите способ</option>
+        <option value="courier">Курьер</option>
+        <option value="post">Почта</option>
+        <option value="pickup">Самовывоз из ресторана</option>
+      </select>
+    target: "option[value='pickup']"
+    targetV2: "option[value='pickup']"
+    answer: "option[value='pickup']"
+    hint: Текст варианта поменяется, а значение, которое уходит на сервер, — нет.
+    explain: "`option[value='pickup']` устойчив. `option:nth-child(2)` и точный текст «Самовывоз» сломались."

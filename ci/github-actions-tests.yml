@@ -1,0 +1,44 @@
+# Пример workflow GitHub Actions для ВАШЕГО репозитория с автотестами (урок 15.6).
+# Положите файл в .github/workflows/tests.yml своего проекта.
+name: Автотесты
+
+on:
+  push:                       # при каждом push
+    branches: [ main ]
+  pull_request:               # и для каждого Pull Request
+  workflow_dispatch:          # и вручную кнопкой Run workflow
+    inputs:
+      tags:
+        description: 'JUnit-теги'
+        default: 'smoke'
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest    # виртуальная машина GitHub с Ubuntu
+    steps:
+      - uses: actions/checkout@v4            # скачать код репозитория
+
+      - uses: actions/setup-java@v4          # установить JDK 21 и кэшировать ~/.m2
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Запустить QA Burger
+        run: |
+          ./mvnw -B -q install -Dmaven.test.skip=true -pl shop-app,exercises/test-support -am
+          nohup java -jar shop-app/target/shop-app-1.0.0-exec.jar > shop.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:8081/api/products > /dev/null && break; sleep 1; done
+
+      - name: Тесты
+        run: ./mvnw -B -f exercises/m14-framework/pom.xml test "-Dgroups=${{ github.event.inputs.tags || 'smoke | regression' }}"
+
+      - name: Отчёт Allure
+        if: always()                         # даже если тесты упали
+        run: ./mvnw -B -f exercises/m14-framework/pom.xml allure:report
+
+      - uses: actions/upload-artifact@v4     # сохранить отчёт как артефакт сборки
+        if: always()
+        with:
+          name: allure-report
+          path: exercises/m14-framework/target/site/allure-maven-plugin

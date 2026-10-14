@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Загрузка файла')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Загрузка файла</h1>
+<form method="post" action="/playground/upload" enctype="multipart/form-data" class="form" data-testid="upload-form">
+  <input type="file" name="file" id="file-input" data-testid="file-input">
+  <button type="submit" class="btn" id="upload-btn" data-testid="upload-button">Загрузить</button>
+</form>
+<div th:if="${fileName}" class="result" data-testid="upload-result">
+  <p>Файл: <b id="uploaded-name" data-testid="uploaded-name" th:text="${fileName}"></b></p>
+  <p>Размер: <b data-testid="uploaded-size" th:text="${fileSize}"></b> байт</p>
+  <pre data-testid="uploaded-preview" th:text="${preview}"></pre>
+</div>
+</main>
+</body>
+</html>

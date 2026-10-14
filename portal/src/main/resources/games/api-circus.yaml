@@ -1,0 +1,353 @@
+# API Circus: контракт + запрос + ответ → что нарушено. Первый вариант — правильный.
+levels:
+  - title: Создание товара
+    tag: REST
+    blocks:
+      - label: Контракт
+        lang: plaintext
+        text: "POST /api/products — создаёт товар. Успех: 201 Created, заголовок Location, тело — созданный товар с id."
+      - label: Запрос
+        lang: http
+        text: |
+          POST /api/products HTTP/1.1
+          Authorization: Bearer eyJhbGciOi...
+          Content-Type: application/json
+
+          {"name": "Сырный бургер", "price": 289.00, "category": "BURGERS"}
+      - label: Ответ
+        lang: http
+        text: |
+          HTTP/1.1 200 OK
+          Content-Type: application/json
+
+          {"id": 42, "name": "Сырный бургер", "price": 289.00, "category": "BURGERS"}
+    question: Что нарушено?
+    options:
+      - "Код 200 вместо 201 и нет заголовка Location"
+      - "Цена должна быть строкой"
+      - "Нет поля category"
+      - "Всё соответствует контракту"
+    explain: |
+      Для создания ресурса контракт требует **201 Created** и `Location: /api/products/42`. Клиенты, которые полагаются на 201, могут сломаться.
+
+  - title: Ошибка валидации
+    tag: REST
+    blocks:
+      - label: Контракт
+        lang: plaintext
+        text: "Ошибки валидации: 400, тело {\"code\": string, \"message\": string, \"fields\": [{\"field\", \"error\"}]}"
+      - label: Запрос
+        lang: http
+        text: |
+          POST /api/cart/items
+          {"productId": 1, "quantity": 0}
+      - label: Ответ
+        lang: http
+        text: |
+          HTTP/1.1 500 Internal Server Error
+
+          {"timestamp":"2026-10-14T10:00:00Z","status":500,"error":"Internal Server Error","path":"/api/cart/items"}
+    question: Что не так?
+    options:
+      - "Неверный ввод привёл к 500 вместо 400 с описанием ошибки"
+      - "quantity = 0 допустимо, должно быть 201"
+      - "Нужен 404"
+      - "Всё верно"
+    explain: |
+      500 означает необработанную ошибку на сервере. По контракту — **400** с `code` (например, BAD_QUANTITY) и полем `fields`. Это баг.
+
+  - title: Список заказов
+    tag: REST
+    blocks:
+      - label: Контракт
+        lang: plaintext
+        text: "GET /api/orders — заказы ТЕКУЩЕГО пользователя. Ответ: массив заказов."
+      - label: Запрос (токен пользователя user)
+        lang: http
+        text: |
+          GET /api/orders
+      - label: Ответ
+        lang: json
+        text: |
+          [
+            {"id": 7, "owner": "user", "total": 498.00, "status": "PAID"},
+            {"id": 8, "owner": "admin", "total": 1290.00, "status": "NEW"}
+          ]
+    question: Найдите нарушение.
+    options:
+      - "Пользователь видит чужой заказ — нарушение прав доступа"
+      - "total должен быть целым"
+      - "Статус NEW недопустим"
+      - "Нарушений нет"
+    explain: |
+      Заказ 8 принадлежит admin. Утечка чужих данных — критичный дефект безопасности (IDOR / нарушение авторизации).
+
+  - title: Пагинация
+    tag: REST
+    blocks:
+      - label: Контракт
+        lang: plaintext
+        text: "GET /api/products?page=N&size=M — страницы с нуля. Ответ: {content: [...], totalElements, totalPages, number}"
+      - label: Запрос
+        lang: http
+        text: |
+          GET /api/products?page=1&size=5
+      - label: Ответ
+        lang: json
+        text: |
+          {"content": [{"id": 5}, {"id": 6}, {"id": 7}, {"id": 8}, {"id": 9}],
+           "totalElements": 12, "totalPages": 3, "number": 1}
+    question: Что не так, если на page=0 пришли id 1–5?
+    options:
+      - "Товар с id 5 повторяется, а один товар пропускается (сдвиг на 1)"
+      - "totalPages должно быть 2"
+      - "Страницы должны считаться с 1"
+      - "Всё верно"
+    explain: |
+      Страница 1 при size=5 должна начинаться с 6-го товара. Пересечение страниц — классический off-by-one. Проверка — собрать id всех страниц и убедиться, что нет дублей и пропусков.
+
+  - title: Формат денег
+    tag: REST
+    blocks:
+      - label: Контракт (OpenAPI)
+        lang: yaml
+        text: |
+          price:
+            type: number
+            format: decimal
+            minimum: 0
+      - label: Ответ
+        lang: json
+        text: '{"id": 3, "name": "Кола", "price": "129.00"}'
+    question: Нарушение?
+    options:
+      - "price передан строкой, а по контракту — число"
+      - "price должен быть целым числом копеек"
+      - "Нужно поле currency"
+      - "Нарушений нет"
+    explain: '"129.00" — строка. JSON Schema с `type: number` такой ответ отклонит, а клиенты, ожидающие число, могут упасть.'
+
+  - title: Меню через GraphQL
+    tag: GraphQL
+    blocks:
+      - label: Схема
+        lang: graphql
+        text: |
+          type Query { products(category: Category): [Product!]! }
+          type Product { id: ID!, name: String!, price: Float! }
+      - label: Запрос
+        lang: graphql
+        text: |
+          { products(category: DRINKS) { id name price } }
+      - label: Ответ
+        lang: json
+        text: |
+          {"data": {"products": [{"id": "3", "name": "Кола", "price": 129.0},
+                                 {"id": "4", "name": null, "price": 99.0}]}}
+    question: Что нарушено?
+    options:
+      - "name объявлен как String! (не null), а пришёл null"
+      - "id должен быть числом"
+      - "GraphQL должен вернуть 201"
+      - "Нарушений нет"
+    explain: '`!` в схеме — поле обязательное. По спецификации GraphQL сервер вообще не должен отдавать null в non-null поле: должна быть ошибка в `errors`.'
+
+  - title: Ошибка GraphQL
+    tag: GraphQL
+    blocks:
+      - label: Запрос
+        lang: graphql
+        text: '{ products { id title } }'
+      - label: Ответ
+        lang: http
+        text: |
+          HTTP/1.1 200 OK
+
+          {"errors": [{"message": "Field 'title' in type 'Product' is undefined", "locations": [{"line": 1, "column": 18}]}]}
+    question: Корректен ли ответ?
+    options:
+      - "Да — GraphQL сообщает ошибки в поле errors, часто с HTTP 200"
+      - "Нет — должен быть 404"
+      - "Нет — должен быть 500"
+      - "Нет — поле title должно игнорироваться"
+    explain: |
+      Поля title нет в схеме — ошибка клиента, и сервер правильно сообщил о ней в `errors`. Поэтому в GraphQL-тестах всегда проверяют `errors`, а не только статус.
+
+  - title: Стоимость доставки
+    tag: SOAP
+    blocks:
+      - label: Контракт (WSDL/XSD)
+        lang: xml
+        text: |
+          <xs:element name="calculateDeliveryResponse">
+            <xs:complexType><xs:sequence>
+              <xs:element name="price" type="xs:decimal"/>
+              <xs:element name="free" type="xs:boolean"/>
+            </xs:sequence></xs:complexType>
+          </xs:element>
+      - label: Ответ
+        lang: xml
+        text: |
+          <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+            <soap:Body>
+              <calculateDeliveryResponse>
+                <price>224.00</price>
+              </calculateDeliveryResponse>
+            </soap:Body>
+          </soap:Envelope>
+    question: Что не так?
+    options:
+      - "Нет обязательного элемента free"
+      - "price должен быть атрибутом"
+      - "SOAP не использует XML"
+      - "Нарушений нет"
+    explain: |
+      В sequence оба элемента обязательны (minOccurs по умолчанию 1). Валидация по XSD поймает отсутствие `free`.
+
+  - title: SOAP Fault
+    tag: SOAP
+    blocks:
+      - label: Запрос
+        lang: xml
+        text: '<calculateDeliveryRequest><distanceKm>-5</distanceKm></calculateDeliveryRequest>'
+      - label: Ответ
+        lang: xml
+        text: |
+          HTTP/1.1 200 OK
+          <soap:Envelope ...><soap:Body>
+            <calculateDeliveryResponse><price>-1120.00</price><free>false</free></calculateDeliveryResponse>
+          </soap:Body></soap:Envelope>
+    question: Найдите проблему.
+    options:
+      - "Отрицательное расстояние принято, и цена вышла отрицательной — нужна ошибка (SOAP Fault)"
+      - "Ответ должен быть JSON"
+      - "free должен быть true"
+      - "Всё нормально"
+    explain: |
+      Некорректный ввод должен приводить к `soap:Fault` (обычно с HTTP 500 в SOAP 1.1) и понятной причиной. Отрицательная цена доставки — бизнес-баг.
+
+  - title: gRPC-вызов
+    tag: gRPC
+    blocks:
+      - label: proto
+        lang: plaintext
+        text: |
+          service Stock {
+            rpc GetStock (StockRequest) returns (StockReply);
+          }
+          message StockRequest { int64 product_id = 1; }
+          message StockReply { int64 product_id = 1; int32 quantity = 2; }
+      - label: Вызов (grpcurl)
+        lang: bash
+        text: |
+          grpcurl -d '{"product_id": 999}' localhost:9090 Stock/GetStock
+      - label: Ответ
+        lang: json
+        text: '{"product_id": "999", "quantity": 0}'
+    question: Что сомнительно с точки зрения контракта?
+    options:
+      - "Несуществующий товар вернул «остаток 0» вместо статуса NOT_FOUND"
+      - "product_id должен быть числом в JSON"
+      - "gRPC не возвращает JSON"
+      - "Всё нормально"
+    explain: 'В gRPC ошибки передаются статусами (NOT_FOUND, INVALID_ARGUMENT). «0» нельзя отличить от «товар есть, но закончился». (`int64` в JSON-представлении — строка, это нормально.)'
+
+  - title: Чат поддержки
+    tag: WebSocket
+    blocks:
+      - label: Контракт
+        lang: plaintext
+        text: "После подключения к /ws/support клиент шлёт {\"type\":\"subscribe\",\"orderId\":N}; сервер отвечает {\"type\":\"subscribed\"} и затем шлёт {\"type\":\"status\",\"orderId\":N,\"status\":...} при каждом изменении."
+      - label: Сообщения
+        lang: plaintext
+        text: |
+          → {"type":"subscribe","orderId":7}
+          ← {"type":"subscribed"}
+          ← {"type":"status","orderId":7,"status":"PAID"}
+          ← {"type":"status","orderId":9,"status":"READY"}
+    question: Найдите нарушение.
+    options:
+      - "Клиент получил статус чужого заказа 9, на который не подписывался"
+      - "Сообщения должны быть в XML"
+      - "Нет сообщения pong"
+      - "Нарушений нет"
+    explain: |
+      Сервер рассылает события не только подписчикам — это и утечка данных, и нарушение контракта.
+
+  - title: Событие OrderCreated
+    tag: Kafka
+    blocks:
+      - label: Контракт события
+        lang: plaintext
+        text: "Топик orders, ключ — id заказа (строка). Значение: {\"type\":\"OrderCreated\",\"orderId\":long,\"total\":decimal,\"createdAt\":ISO-8601}"
+      - label: Сообщение
+        lang: plaintext
+        text: |
+          topic=orders partition=2 offset=118 key=null
+          {"type":"OrderCreated","orderId":42,"total":498.00,"createdAt":"2026-10-14T10:22:31Z"}
+    question: Что нарушено?
+    options:
+      - "Нет ключа — события одного заказа могут попасть в разные партиции и прийти не по порядку"
+      - "offset должен быть 0"
+      - "total должен быть строкой"
+      - "Нарушений нет"
+    explain: |
+      Порядок в Kafka гарантирован только внутри партиции. Ключ = id заказа отправляет все события заказа в одну партицию. Без ключа OrderPaid может обработаться раньше OrderCreated.
+
+  - title: Дата в событии
+    tag: Kafka
+    blocks:
+      - label: Контракт
+        lang: plaintext
+        text: "createdAt — строка ISO-8601 в UTC, например 2026-10-14T10:22:31Z"
+      - label: Сообщение
+        lang: json
+        text: '{"type":"OrderPaid","orderId":42,"paidAt":"14.10.2026 13:22"}'
+    question: Что не так?
+    options:
+      - "Имя и формат даты не соответствуют контракту (paidAt вместо формата ISO-8601 UTC)"
+      - "Тип события должен быть числом"
+      - "Нужен ключ orderId в теле"
+      - "Всё верно"
+    explain: |
+      Потребители парсят ISO-8601 — «14.10.2026 13:22» уронит их, а без часового пояса время неоднозначно. Для каждого события нужен контракт (поля, форматы), и автотест сверяет с ним.
+
+  - title: Идемпотентность
+    tag: REST
+    blocks:
+      - label: Контракт
+        lang: plaintext
+        text: "DELETE /api/cart/items/{id} — удаляет позицию. Повторный DELETE той же позиции — 404 или 204, но без побочных эффектов."
+      - label: Последовательность
+        lang: http
+        text: |
+          DELETE /api/cart/items/5   → 204
+          DELETE /api/cart/items/5   → 204
+          GET /api/cart              → {"items": [], "total": -249.00}
+    question: Что нарушено?
+    options:
+      - "Повторный DELETE изменил состояние — сумма корзины ушла в минус"
+      - "Повторный DELETE должен давать 500"
+      - "DELETE должен возвращать 200"
+      - "Всё нормально"
+    explain: |
+      DELETE должен быть идемпотентным. Здесь каждый вызов вычитает цену — корзина с отрицательной суммой.
+
+  - title: Заголовки
+    tag: REST
+    blocks:
+      - label: Ответ
+        lang: http
+        text: |
+          HTTP/1.1 200 OK
+          Content-Type: text/html;charset=UTF-8
+
+          {"id": 1, "name": "Чизбургер", "price": 249.00}
+    question: В чём проблема?
+    options:
+      - "Content-Type не соответствует телу (должен быть application/json)"
+      - "Нет заголовка Server"
+      - "Код должен быть 201"
+      - "Проблемы нет"
+    explain: |
+      Клиенты и браузер выбирают обработку по Content-Type. REST Assured, например, не распарсит тело как JSON для `body("name", ...)` без подсказки.

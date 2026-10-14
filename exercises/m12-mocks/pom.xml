@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Модуль 12: заглушки внешних сервисов — WireMock.
+  Для задания 12.3 запустите QA Burger с адресом «платёжки» на WireMock:
+    параметр запуска shop.payment.url=http://localhost:8089 (команда — в уроке 12.3)
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ru.qacourse</groupId>
+        <artifactId>exercises-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+    <artifactId>m12-mocks</artifactId>
+    <name>m12 — WireMock</name>
+
+    <dependencies>
+        <dependency><groupId>org.wiremock</groupId><artifactId>wiremock-standalone</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>io.rest-assured</groupId><artifactId>rest-assured</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>ru.qacourse</groupId><artifactId>test-support</artifactId><scope>test</scope></dependency>
+    </dependencies>
+</project>

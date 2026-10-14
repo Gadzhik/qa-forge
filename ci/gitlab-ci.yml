@@ -1,0 +1,54 @@
+# Пример .gitlab-ci.yml для вашего проекта автотестов (урок 15.7).
+# Переименуйте в .gitlab-ci.yml и положите в корень репозитория.
+stages:
+  - test
+  - report
+
+variables:
+  # Кэш Maven внутри папки проекта, чтобы GitLab мог его сохранять между запусками
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  SHOP_URL: "http://localhost:8081"
+  TAGS: "smoke | regression"
+
+cache:
+  key: maven
+  paths:
+    - .m2/repository
+
+tests:
+  stage: test
+  image: maven:3.9.9-eclipse-temurin-21      # job выполняется внутри этого Docker-образа
+  script:
+    - ./mvnw -B -q install -Dmaven.test.skip=true -pl shop-app,exercises/test-support -am
+    - nohup java -jar shop-app/target/shop-app-1.0.0-exec.jar > shop.log 2>&1 &
+    - for i in $(seq 1 60); do curl -sf $SHOP_URL/api/products > /dev/null && break; sleep 1; done
+    - ./mvnw -B -f exercises/m14-framework/pom.xml test "-Dgroups=$TAGS" -Dshop.url=$SHOP_URL
+  artifacts:
+    when: always                              # сохранить даже при падении
+    paths:
+      - exercises/m14-framework/target/allure-results
+      - shop.log
+    reports:
+      junit: exercises/m14-framework/target/surefire-reports/TEST-*.xml   # GitLab покажет результаты в MR
+    expire_in: 7 days
+
+allure:
+  stage: report
+  image: maven:3.9.9-eclipse-temurin-21
+  when: always
+  needs: [ tests ]
+  script:
+    - ./mvnw -B -f exercises/m14-framework/pom.xml allure:report
+  artifacts:
+    when: always
+    paths:
+      - exercises/m14-framework/target/site/allure-maven-plugin
+    expire_in: 7 days
+
+# Вариант со связкой в Docker (нужен runner с поддержкой Docker-in-Docker):
+# tests-in-docker:
+#   stage: test
+#   image: docker:27
+#   services: [ docker:27-dind ]
+#   script:
+#     - docker compose -f ci/docker-compose.tests.yml up --build --abort-on-container-exit --exit-code-from tests

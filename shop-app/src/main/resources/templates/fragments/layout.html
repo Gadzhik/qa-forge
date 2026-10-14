@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' — QA Burger'">QA Burger</title>
+    <link rel="stylesheet" href="/css/app.css">
+    <script src="/js/app.js" defer></script>
+</head>
+<body>
+<header th:fragment="header" th:class="${v2} ? 'topbar topbar--v2' : 'header'" data-testid="header">
+    <a href="/" th:class="${v2} ? 'brand-v2' : 'logo'" data-testid="logo">🍔 QA Burger</a>
+    <button type="button" class="menu-toggle" data-testid="menu-toggle" aria-label="Меню"
+            onclick="document.body.classList.toggle('menu-open')">☰</button>
+    <nav th:class="${v2} ? 'nav-v2' : 'nav'" data-testid="nav">
+        <a href="/" data-testid="nav-catalog">Каталог</a>
+        <a href="/orders" th:if="${user != null}" data-testid="nav-orders">Мои заказы</a>
+        <a href="/playground" data-testid="nav-playground">Песочница</a>
+        <a href="/admin" data-testid="nav-admin">Тренажёр</a>
+        <a href="/cart" th:class="${v2} ? 'basket' : 'cart-link'" data-testid="nav-cart">
+            🛒 <span th:class="${v2} ? 'basket__count' : 'cart-count'" data-testid="cart-count" th:text="${cartCount}">0</span>
+        </a>
+        <span th:if="${user != null}" class="user-name" data-testid="user-name" th:text="${headerName}">user</span>
+        <form th:if="${user != null}" action="/logout" method="post" class="inline">
+            <button type="submit" class="link-button" data-testid="logout">Выйти</button>
+        </form>
+        <a th:if="${user == null}" href="/login" data-testid="nav-login">Войти</a>
+    </nav>
+</header>
+
+<div th:fragment="flash">
+    <div th:if="${message}" class="alert alert--ok" data-testid="flash-message" th:text="${message}"></div>
+    <div th:if="${error}" class="alert alert--error" data-testid="flash-error" th:text="${error}"></div>
+</div>
+
+<footer th:fragment="footer" class="footer">
+    QA Burger — учебное приложение курса Java QA Automation ·
+    <a href="/swagger-ui.html">Swagger</a> · <a href="/graphiql">GraphiQL</a> · <a href="/h2-console">H2</a>
+    · дизайн: <a href="?design=v1">v1</a> / <a href="?design=v2">v2</a>
+</footer>
+</body>
+</html>

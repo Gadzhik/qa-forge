@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <property name="LOG_FILE" value="${LOG_FILE:-logs/shop-app.log}"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- Буфер последних строк лога для /api/debug/logs -->
+    <appender name="BUFFER" class="ru.qacourse.shop.admin.LogBuffer"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="BUFFER"/>
+    </root>
+
+    <!-- При запуске из тестов (профиль embedded) лог в файл не пишем -->
+    <springProfile name="!embedded">
+        <include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
+        <root level="INFO">
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+</configuration>

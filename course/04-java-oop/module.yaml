@@ -1,0 +1,3 @@
+title: "Java: объектно-ориентированное программирование"
+summary: "Классы и объекты, инкапсуляция, конструкторы, static, equals/hashCode/toString, наследование, интерфейсы, полиморфизм, enum, record, generics"
+icon: "🧱"

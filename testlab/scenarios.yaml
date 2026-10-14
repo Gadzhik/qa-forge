@@ -1,0 +1,303 @@
+# Сценарии Test Lab. Генерируются из каталога багов shop-app (Bug.java).
+# Портал читает этот файл, чтобы показать карточки сценариев.
+scenarios:
+  - code: BUG-101
+    area: "Каталог"
+    title: "Пропадают товары при листании"
+    report: "Листаю каталог через API по 5 штук на страницу. Всего товаров 20, а суммарно по всем страницам я получаю меньше. Каждая страница какая-то короткая."
+    where: "GET /api/products?page=0&size=5"
+    hint: "Сложите размеры всех страниц и сравните с totalElements."
+    type: api
+    level: 2
+    test: Bug101Test
+    check: Bug101Check
+  - code: BUG-102
+    area: "Каталог"
+    title: "Сортировка «сначала дорогие» не работает"
+    report: "Выбираю сортировку по убыванию цены, а первым всё равно идёт самый дешёвый товар."
+    where: "GET /api/products?sort=price,desc"
+    hint: "Достаньте список цен (path \"content.price\") и проверьте, что он отсортирован по убыванию — у AssertJ есть isSortedAccordingTo."
+    type: api
+    level: 1
+    test: Bug102Test
+    check: Bug102Check
+  - code: BUG-103
+    area: "Каталог"
+    title: "Поиск не находит товар с большой буквы"
+    report: "Ищу «бургер» — ничего не находится, хотя «Бургер» в названии есть."
+    where: "GET /api/products?search=..."
+    hint: "Сравните результаты поиска по одному и тому же слову с маленькой и с большой буквы."
+    type: api
+    level: 1
+    test: Bug103Test
+    check: Bug103Check
+  - code: BUG-104
+    area: "Каталог"
+    title: "Ошибка сервера при открытии несуществующего товара"
+    report: "По старой ссылке на удалённый товар приходит 500 Internal Server Error вместо понятного «не найдено»."
+    where: "GET /api/products/{id}"
+    hint: "Какой статус должен вернуть API для товара, которого нет? Проверьте statusCode."
+    type: api
+    level: 1
+    test: Bug104Test
+    check: Bug104Check
+  - code: BUG-105
+    area: "Каталог"
+    title: "Фильтр по категории ничего не фильтрует"
+    report: "Выбираю категорию «Напитки», а в выдаче и бургеры, и картошка."
+    where: "GET /api/products?category=DRINK"
+    hint: "Извлеките список категорий из ответа и убедитесь, что там только DRINK."
+    type: api
+    level: 1
+    test: Bug105Test
+    check: Bug105Check
+  - code: BUG-201
+    area: "Аккаунт"
+    title: "Можно зарегистрироваться дважды с одной почтой"
+    report: "Коллега зарегистрировался на мой email, и теперь у нас два аккаунта с одной почтой."
+    where: "POST /api/auth/register"
+    hint: "Зарегистрируйте двух разных пользователей с одинаковым email. Второй запрос должен вернуть 409."
+    type: api
+    level: 1
+    test: Bug201Test
+    check: Bug201Check
+  - code: BUG-202
+    area: "Аккаунт"
+    title: "Принимается слишком короткий пароль"
+    report: "По правилам пароль должен быть не короче 6 символов, но регистрация с паролем «123» проходит."
+    where: "POST /api/auth/register"
+    hint: "Требование: пароль не короче 6 символов. Что должно вернуть API на пароль из 3 символов?"
+    type: api
+    level: 1
+    test: Bug202Test
+    check: Bug202Check
+  - code: BUG-203
+    area: "Аккаунт"
+    title: "Пароль проверяется без учёта регистра"
+    report: "Мой пароль «Secret1», но войти получается и с «SECRET1», и с «secret1»."
+    where: "POST /api/auth/login"
+    hint: "Зарегистрируйте пользователя с паролем в смешанном регистре и попробуйте войти тем же паролем ЗАГЛАВНЫМИ."
+    type: api
+    level: 2
+    test: Bug203Test
+    check: Bug203Check
+  - code: BUG-204
+    area: "Безопасность"
+    title: "Видны чужие заказы"
+    report: "Поменял номер заказа в адресе и увидел заказ другого человека с его адресом и суммой."
+    where: "GET /api/orders/{id}"
+    hint: "Понадобятся два пользователя: admin создаёт заказ, а user пытается его открыть."
+    type: api
+    level: 2
+    test: Bug204Test
+    check: Bug204Check
+  - code: BUG-301
+    area: "Корзина"
+    title: "В корзину можно добавить 0 или минус товаров"
+    report: "Отправил количество -2 — в корзине появилась строка с отрицательной суммой."
+    where: "POST /api/cart/items"
+    hint: "Граничные значения: 0 и отрицательные числа. Ожидается 400."
+    type: api
+    level: 1
+    test: Bug301Test
+    check: Bug301Check
+  - code: BUG-302
+    area: "Корзина"
+    title: "Повторное добавление товара сбрасывает количество"
+    report: "Добавил 2 бургера, потом ещё 1 такой же — в корзине стал 1, а не 3."
+    where: "POST /api/cart/items"
+    hint: "Добавьте один и тот же товар два раза и проверьте итоговое количество."
+    type: api
+    level: 2
+    test: Bug302Test
+    check: Bug302Check
+  - code: BUG-303
+    area: "Корзина"
+    title: "Можно положить больше, чем есть на складе"
+    report: "На складе 10 штук, а в корзину положились 50, и заказ оформился."
+    where: "POST /api/cart/items"
+    hint: "Узнайте stock товара через GET /api/products/{id} и попробуйте положить stock + 1."
+    type: api
+    level: 2
+    test: Bug303Test
+    check: Bug303Check
+  - code: BUG-304
+    area: "Корзина"
+    title: "Итог корзины не учитывает количество"
+    report: "Взял 3 одинаковых напитка, а сумма в корзине как за один."
+    where: "GET /api/cart"
+    hint: "Сравните total корзины с price × quantity. Для денег используйте BigDecimal, а не float."
+    type: api
+    level: 2
+    test: Bug304Test
+    check: Bug304Check
+  - code: BUG-401
+    area: "Заказ"
+    title: "Промокод даёт двойную скидку"
+    report: "Промокод SALE10 должен давать 10%, а списалось на 19% меньше."
+    where: "POST /api/orders"
+    hint: "subtotal × 0.9 должно быть равно total. Сравнивайте через isEqualByComparingTo."
+    type: api
+    level: 2
+    test: Bug401Test
+    check: Bug401Check
+  - code: BUG-402
+    area: "Заказ"
+    title: "Принимается просроченный промокод"
+    report: "Промокод SUMMER2020 давно закончился, но всё ещё работает."
+    where: "POST /api/orders"
+    hint: "В базе есть промокод SUMMER2020 — он давно истёк."
+    type: api
+    level: 1
+    test: Bug402Test
+    check: Bug402Check
+  - code: BUG-403
+    area: "Заказ"
+    title: "Создаётся заказ из пустой корзины"
+    report: "Нажал «Оформить» с пустой корзиной — появился заказ на 0 ₽."
+    where: "POST /api/orders"
+    hint: "Попробуйте оформить заказ, ничего не положив в корзину."
+    type: api
+    level: 1
+    test: Bug403Test
+    check: Bug403Check
+  - code: BUG-404
+    area: "Заказ"
+    title: "Сумма заказа округляется вниз до рублей"
+    report: "Корзина на 489.90, а в заказе 489.00."
+    where: "POST /api/orders"
+    hint: "Возьмите товар с копейками в цене (Классический бургер, 289.90) и проверьте total."
+    type: api
+    level: 2
+    test: Bug404Test
+    check: Bug404Check
+  - code: BUG-405
+    area: "Заказ"
+    title: "Можно отменить уже оплаченный заказ"
+    report: "Оплатил, потом отменил — заказ отменён, а деньги не вернулись. Отмена после оплаты должна быть запрещена."
+    where: "POST /api/orders/{id}/cancel"
+    hint: "Сначала оплатите заказ (/pay), потом попробуйте отменить (/cancel). Ожидается 409."
+    type: api
+    level: 2
+    test: Bug405Test
+    check: Bug405Check
+  - code: BUG-501
+    area: "Кухня"
+    title: "Оплаченный заказ никогда не начинают готовить"
+    report: "Заказ оплачен полчаса назад, а статус так и висит PAID — кухня его не видит."
+    where: "POST /api/orders/{id}/pay → статус"
+    hint: "Кухня работает асинхронно. Подождите статус READY с помощью Awaitility (до ~15 секунд)."
+    type: api
+    level: 3
+    test: Bug501Test
+    check: Bug501Check
+  - code: BUG-502
+    area: "Оплата"
+    title: "Повторная оплата списывает деньги второй раз"
+    report: "Случайно нажал «Оплатить» дважды — платёжный сервис получил два списания."
+    where: "POST /api/orders/{id}/pay"
+    hint: "Оплатите заказ дважды. Второй раз сервер должен ответить 409."
+    type: api
+    level: 2
+    test: Bug502Test
+    check: Bug502Check
+  - code: BUG-503
+    area: "Оплата"
+    title: "Заказ считается оплаченным, хотя оплата упала"
+    report: "Платёжный сервис лежал, а заказ всё равно получил статус PAID."
+    where: "POST /api/orders/{id}/pay"
+    hint: "В этом сценарии платёжный сервис недоступен. Какой статус должен получить заказ после попытки оплаты?"
+    type: api
+    level: 3
+    test: Bug503Test
+    check: Bug503Check
+  - code: BUG-601
+    area: "Отзывы"
+    title: "HTML из отзыва выполняется на странице"
+    report: "Кто-то оставил отзыв с тегом <b> и <script>, и на странице товара текст стал жирным."
+    where: "UI: /product/{id}"
+    hint: "Создайте отзыв с HTML через API, откройте страницу товара в браузере и проверьте, что теги видны как текст."
+    type: ui
+    level: 3
+    test: Bug601Test
+    check: Bug601Check
+  - code: BUG-602
+    area: "Отзывы"
+    title: "Можно поставить оценку 6 из 5"
+    report: "У товара средняя оценка 5.4 из 5. Похоже, принимаются оценки больше 5."
+    where: "POST /api/products/{id}/reviews"
+    hint: "Граничное значение: оценка 6 при допустимом диапазоне 1–5. Ожидается 400."
+    type: api
+    level: 1
+    test: Bug602Test
+    check: Bug602Check
+  - code: BUG-701
+    area: "Интерфейс"
+    title: "Счётчик корзины показывает не то"
+    report: "Положил 3 бургера, а значок корзины в шапке показывает 1."
+    where: "UI: шапка сайта"
+    hint: "Положите в корзину 3 штуки одного товара через API, затем авторизуйтесь в браузере через cookie token и проверьте счётчик."
+    type: ui
+    level: 2
+    test: Bug701Test
+    check: Bug701Check
+  - code: BUG-702
+    area: "Интерфейс"
+    title: "В шапке показывается почта вместо имени"
+    report: "После входа в шапке сайта видна моя почта, хотя должно быть имя пользователя."
+    where: "UI: шапка сайта"
+    hint: "Войдите через форму логина и проверьте текст элемента [data-testid=user-name]."
+    type: ui
+    level: 2
+    test: Bug702Test
+    check: Bug702Check
+  - code: BUG-703
+    area: "Интерфейс"
+    title: "Кнопка «В корзину» не добавляет товар со страницы товара"
+    report: "На странице товара жму «В корзину», появляется «Добавлено», но корзина пустая."
+    where: "UI: /product/{id}"
+    hint: "После клика по кнопке проверьте корзину через API (GET /api/cart) — UI может обманывать."
+    type: ui
+    level: 3
+    test: Bug703Test
+    check: Bug703Check
+  - code: BUG-801
+    area: "Документы"
+    title: "В PDF-чеке сумма без скидки"
+    report: "Оплатил со скидкой, а в чеке PDF стоит полная сумма."
+    where: "GET /api/orders/{id}/receipt.pdf"
+    hint: "Скачайте PDF как массив байт и извлеките текст через PDFBox (Loader.loadPDF + PDFTextStripper)."
+    type: api
+    level: 3
+    test: Bug801Test
+    check: Bug801Check
+  - code: BUG-802
+    area: "Документы"
+    title: "В выгрузке Excel не хватает последнего заказа"
+    report: "Сделал 3 заказа, а в orders.xlsx только 2 строки."
+    where: "GET /api/orders/export.xlsx"
+    hint: "Сделайте 2 заказа, скачайте xlsx и посчитайте строки через Apache POI (не забудьте про строку заголовков)."
+    type: api
+    level: 3
+    test: Bug802Test
+    check: Bug802Check
+  - code: BUG-901
+    area: "GraphQL"
+    title: "GraphQL отдаёт цену без копеек"
+    report: "Через GraphQL цена 189, а в REST — 189.90."
+    where: "POST /graphql"
+    hint: "Запросите цену одного товара через REST и через GraphQL и сравните."
+    type: api
+    level: 2
+    test: Bug901Test
+    check: Bug901Check
+  - code: BUG-902
+    area: "SOAP"
+    title: "Доставка на 0 км стоит отрицательных денег"
+    report: "SOAP-сервис расчёта доставки для расстояния 0 вернул -50."
+    where: "POST /ws/delivery"
+    hint: "Отправьте SOAP-запрос с distanceKm = 0. Стоимость не может быть отрицательной."
+    type: api
+    level: 2
+    test: Bug902Test
+    check: Bug902Check

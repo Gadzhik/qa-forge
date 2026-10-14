@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Ошибка')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container narrow">
+    <h1 data-testid="error-status" th:text="${status}">404</h1>
+    <p data-testid="error-message" th:text="${message}"></p>
+    <a href="/">На главную</a>
+</main>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head(${product.name})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <a href="/" data-testid="back-link">← В меню</a>
+    <div class="product-page" data-testid="product-page" th:attr="data-product-id=${product.id}">
+        <div class="emoji emoji--big" th:text="${product.emoji}"></div>
+        <div>
+            <h1 data-testid="product-title" th:text="${product.name}"></h1>
+            <p data-testid="product-description" th:text="${product.description}"></p>
+            <p class="price" data-testid="product-price" th:text="${product.price} + ' ₽'"></p>
+            <p data-testid="product-stock">В наличии: <span th:text="${product.stock}"></span> шт.</p>
+            <div class="row">
+                <label for="qty">Количество</label>
+                <input id="qty" type="number" min="1" max="99" value="1" data-testid="quantity-input">
+                <button type="button" class="btn" id="add-to-cart-js" data-testid="add-to-cart"
+                        th:attr="data-product-id=${product.id},data-broken=${brokenAddButton}"
+                        th:disabled="${user == null}">В корзину</button>
+            </div>
+            <p th:if="${user == null}" class="hint" data-testid="login-hint">Чтобы добавить в корзину, <a href="/login">войдите</a>.</p>
+            <div class="toast" id="toast" data-testid="toast" hidden></div>
+        </div>
+    </div>
+
+    <section class="reviews" data-testid="reviews">
+        <h2>Отзывы (<span data-testid="reviews-count" th:text="${#lists.size(reviews)}">0</span>)</h2>
+        <div th:each="r : ${reviews}" class="review" data-testid="review">
+            <b data-testid="review-author" th:text="${r.author}"></b>
+            <span class="stars" data-testid="review-rating" th:text="${r.rating} + '/5'"></span>
+            <p th:if="${unsafeReviews}" data-testid="review-text" th:utext="${r.text}"></p>
+            <p th:unless="${unsafeReviews}" data-testid="review-text" th:text="${r.text}"></p>
+        </div>
+        <form th:if="${user != null}" id="review-form" class="review-form" data-testid="review-form"
+              th:attr="data-product-id=${product.id}">
+            <textarea name="text" required placeholder="Ваш отзыв" data-testid="review-input"></textarea>
+            <select name="rating" data-testid="review-rating-select">
+                <option>5</option><option>4</option><option>3</option><option>2</option><option>1</option>
+            </select>
+            <button type="submit" class="btn" data-testid="review-submit">Отправить</button>
+        </form>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

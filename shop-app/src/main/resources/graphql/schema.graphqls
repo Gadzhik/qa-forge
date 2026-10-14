@@ -1,0 +1,26 @@
+# GraphQL-схема меню QA Burger.
+# Пример запроса:  { products(category: DRINK) { id name price } }
+type Query {
+    products(category: Category): [Product!]!
+    product(id: ID!): Product
+}
+
+enum Category { BURGER SIDE DRINK DESSERT }
+
+type Product {
+    id: ID!
+    name: String!
+    description: String!
+    price: Float!
+    category: Category!
+    stock: Int!
+    emoji: String
+    reviews: [Review!]!
+}
+
+type Review {
+    id: ID!
+    author: String!
+    text: String!
+    rating: Int!
+}

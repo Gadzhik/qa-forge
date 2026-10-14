@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Мои заказы')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <h1>Мои заказы</h1>
+    <p th:if="${#lists.isEmpty(orders)}" class="empty" data-testid="orders-empty">Заказов пока нет</p>
+    <table th:unless="${#lists.isEmpty(orders)}" class="table" data-testid="orders-table">
+        <thead><tr><th>№</th><th>Статус</th><th>Сумма</th><th>Создан</th></tr></thead>
+        <tbody>
+        <tr th:each="o : ${orders}" data-testid="order-row">
+            <td><a th:href="@{/orders/{id}(id=${o.id})}" data-testid="order-link" th:text="${o.id}"></a></td>
+            <td data-testid="order-status" th:text="${o.status}"></td>
+            <td data-testid="order-total" th:text="${o.total}"></td>
+            <td th:text="${#temporals.format(o.createdAt, 'dd.MM.yyyy HH:mm')}"></td>
+        </tr>
+        </tbody>
+    </table>
+    <p><a href="/api/orders/export.xlsx" data-testid="export-xlsx">⬇ Выгрузить в Excel</a></p>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

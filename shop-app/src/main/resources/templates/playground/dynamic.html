@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Динамика и ожидания')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Динамика и ожидания</h1>
+<div class="cards">
+  <section>
+    <h3>Появляется через 3 секунды</h3>
+    <button class="btn" id="start-loading" data-testid="start-loading">Загрузить</button>
+    <div id="loading" data-testid="loading" hidden>⏳ Загрузка...</div>
+    <div id="loaded" data-testid="loaded" hidden>Готово! Бургер испечён.</div>
+  </section>
+  <section>
+    <h3>Исчезает через 2 секунды</h3>
+    <button class="btn" id="hide-btn" data-testid="hide-btn">Спрятать</button>
+    <div id="vanishing" data-testid="vanishing">Я скоро исчезну</div>
+  </section>
+  <section>
+    <h3>Кнопка станет активной через 4 секунды</h3>
+    <button class="btn" id="enable-btn" data-testid="enable-btn">Запустить таймер</button>
+    <button class="btn" id="late-btn" data-testid="late-btn" disabled
+            onclick="this.textContent='Нажата!'">Ждите...</button>
+  </section>
+  <section>
+    <h3>Текст меняется</h3>
+    <button class="btn" id="counter-btn" data-testid="counter-btn">Старт</button>
+    <b id="counter" data-testid="counter">0</b>
+  </section>
+  <section>
+    <h3>Случайная задержка (0.5–5 с)</h3>
+    <button class="btn" id="random-btn" data-testid="random-btn">Получить заказ</button>
+    <ul id="random-list" data-testid="random-list"></ul>
+  </section>
+</div>
+<script>
+document.getElementById('start-loading').onclick = () => {
+  const l = document.getElementById('loading'), r = document.getElementById('loaded');
+  l.hidden = false; r.hidden = true;
+  setTimeout(() => { l.hidden = true; r.hidden = false; }, 3000);
+};
+document.getElementById('hide-btn').onclick = () => setTimeout(() => document.getElementById('vanishing').remove(), 2000);
+document.getElementById('enable-btn').onclick = () => setTimeout(() => {
+  const b = document.getElementById('late-btn'); b.disabled = false; b.textContent = 'Нажми меня'; }, 4000);
+document.getElementById('counter-btn').onclick = () => {
+  let n = 0; const c = document.getElementById('counter');
+  const t = setInterval(() => { c.textContent = ++n; if (n >= 5) clearInterval(t); }, 700);
+};
+document.getElementById('random-btn').onclick = () => setTimeout(() => {
+  const li = document.createElement('li'); li.dataset.testid = 'random-item';
+  li.textContent = 'Заказ #' + Math.floor(Math.random() * 1000); document.getElementById('random-list').appendChild(li);
+}, 500 + Math.random() * 4500);
+</script>
+</main>
+</body>
+</html>

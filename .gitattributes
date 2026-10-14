@@ -1,0 +1,9 @@
+# Git сам выставляет правильные окончания строк для каждой ОС
+* text=auto
+# Скрипты для Linux/macOS обязаны иметь LF, иначе bash выдаст ошибку "\r: command not found"
+*.sh text eol=lf
+mvnw text eol=lf
+gradlew text eol=lf
+# Скрипты для Windows обязаны иметь CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf

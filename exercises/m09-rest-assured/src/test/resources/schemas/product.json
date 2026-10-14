@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Товар QA Burger",
+  "type": "object",
+  "required": ["id", "name", "description", "price", "category", "stock"],
+  "properties": {
+    "id": { "type": "integer", "minimum": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "price": { "type": "number", "minimum": 0, "exclusiveMinimum": true },
+    "category": { "type": "string", "enum": ["BURGER", "SIDE", "DRINK", "DESSERT"] },
+    "stock": { "type": "integer", "minimum": 0 },
+    "emoji": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

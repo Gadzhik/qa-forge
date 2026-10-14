@@ -1,0 +1,85 @@
+# Настройки QA Burger. Любое значение можно переопределить:
+#   параметром запуска:  --server.port=9090
+#   переменной окружения: SERVER_PORT=9090
+server:
+  port: 8081
+  servlet:
+    session:
+      tracking-modes: cookie   # идентификатор сессии только в cookie, без ;jsessionid=... в адресах
+
+spring:
+  application:
+    name: qa-burger
+  # По умолчанию — база H2 в памяти: ничего не нужно устанавливать, данные сбрасываются при перезапуске.
+  datasource:
+    url: jdbc:h2:mem:shop;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true      # веб-консоль БД: http://localhost:8081/h2-console (JDBC URL: jdbc:h2:mem:shop)
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: validate # схему создаёт Flyway (resources/db/migration), Hibernate только сверяет
+    open-in-view: false
+  flyway:
+    enabled: true
+  graphql:
+    graphiql:
+      enabled: true      # консоль GraphQL: http://localhost:8081/graphiql
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  # профиль docker = PostgreSQL + Kafka (запуск через docker compose)
+  profiles:
+    group:
+      docker: postgres,kafka
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  thymeleaf:
+    cache: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html   # документация API: http://localhost:8081/swagger-ui.html
+
+shop:
+  h2:
+    tcp-port: 9093           # доступ к встроенной базе извне: jdbc:h2:tcp://localhost:9093/mem:shop (0 — выключить)
+  bugs: ""                   # включённые баги, например: BUG-101,BUG-302 (или all)
+  payment:
+    url: ""                  # адрес платёжного сервиса; пусто = встроенная заглушка /fake-payment
+  kitchen:
+    cooking-delay: PT2S      # через сколько после оплаты заказ начинают готовить
+    ready-delay: PT3S        # сколько готовится
+
+logging:
+  file:
+    name: logs/shop-app.log
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/qaburger
+    username: qaburger
+    password: qaburger
+---
+spring:
+  config:
+    activate:
+      on-profile: embedded
+  # Запуск из тестов: Kafka-автоконфигурация не нужна
+  kafka:
+    listener:
+      auto-startup: false

@@ -1,0 +1,195 @@
+# System Autopsy: инцидент → вкладки с данными → первопричина (первый вариант — правильный).
+incidents:
+  - id: payments-timeout
+    title: Ошибки оплаты в пятницу вечером
+    alert: "**payment-errors-rate > 5% for 5m** — qa-burger / prod. Сейчас 38%."
+    question: Какова первопричина?
+    tabs:
+      - name: 📈 Метрики
+        text: |
+          orders-service  POST /api/orders/{id}/pay
+            rate      : 42 rps (обычно 40)
+            errors    : 38%  ↑ с 18:05
+            p99       : 5 100 ms  (обычно 210 ms)
+          payment-service → bank-gateway
+            p99       : 5 000 ms  (timeout = 5 000 ms)
+          bank-gateway (внешний)
+            доступность по health-check: 100%
+          JVM orders-service: CPU 18%, heap 41%
+      - name: 📜 Логи
+        text: |
+          18:06:12 ERROR [a91f] payment-service  BankClient : Read timed out after 5000 ms, POST https://bank.example/payments
+          18:06:12 WARN  [a91f] orders-service   PaymentFacade : Payment failed for order 88121: PAYMENT_TIMEOUT
+          18:06:14 INFO  [b302] payment-service  BankClient : POST https://bank.example/payments 200 in 4870 ms
+          18:06:15 ERROR [c77d] payment-service  BankClient : Read timed out after 5000 ms
+      - name: 🧵 Трейсы
+        text: |
+          POST /api/orders/88121/pay                      5 140 ms ❗
+           ├─ orders-service: load order                      9 ms
+           ├─ orders → payment-service: charge             5 120 ms ❗
+           │   ├─ payment-service: validate card               3 ms
+           │   └─ payment-service → bank: POST /payments  5 000 ms  timeout
+           └─ orders-service: save PAYMENT_FAILED            6 ms
+      - name: 🚀 Деплои
+        text: |
+          16:40  frontend v3.12.0   (изменение текстов)
+          Деплоев payment-service за неделю не было.
+          Сообщение партнёра (bank.example status page, 18:02): «Повышенное время ответа API платежей, работаем над проблемой».
+      - name: ⎈ kubectl
+        text: |
+          $ kubectl get pods -n prod | grep pay
+          payment-service-6c9d8-2kq7x   1/1  Running  0  6d
+          payment-service-6c9d8-9mzt1   1/1  Running  0  6d
+    options:
+      - "Внешний банк отвечает медленнее таймаута 5 с — проблема на стороне партнёра"
+      - "Утечка памяти в orders-service"
+      - "Ошибка в релизе frontend 3.12.0"
+      - "Перезапуски подов payment-service"
+    explain: |
+      Трейс показывает, что всё время уходит на вызов банка, который упирается в таймаут 5 с; статус-страница партнёра подтверждает. Наш код не менялся, поды стабильны.
+      **Что делаем:** связываемся с партнёром, временно показываем пользователям понятное сообщение; на будущее — автотест с WireMock, имитирующим медленный банк (модуль 12), и алерт на p99 внешнего вызова.
+
+  - id: oom
+    title: Каталог отвечает через раз
+    alert: "**catalog 5xx > 10%** — prod. Пользователи пишут: «меню то грузится, то нет»."
+    question: Первопричина?
+    tabs:
+      - name: 📈 Метрики
+        text: |
+          catalog-service
+            errors  : 12–30% (пилой), с 11:20
+            memory  : растёт до 1 024 Mi, затем падает до 300 Mi — повторяется каждые ~15 мин
+            restarts: 7 за 2 часа
+      - name: 📜 Логи
+        text: |
+          12:03:41 INFO  catalog-service : Started CatalogApplication in 6.2 seconds
+          12:17:58 WARN  catalog-service : ProductImageCache size=48211 entries
+          12:18:30 (лог обрывается)
+      - name: 🧵 Трейсы
+        text: |
+          Ошибочные запросы: 502 Bad Gateway от ingress — бэкенд недоступен (под перезапускается).
+      - name: 🚀 Деплои
+        text: |
+          11:05  catalog-service v2.14.0  «Кэш картинок товаров в памяти для ускорения каталога»
+      - name: ⎈ kubectl
+        text: |
+          $ kubectl describe pod catalog-service-7f6c-x1 -n prod
+          Last State:     Terminated
+            Reason:       OOMKilled
+            Exit Code:    137
+          Limits:  memory: 1Gi
+          Restart Count:  7
+    options:
+      - "Кэш без ограничения размера из релиза 2.14 переполняет память — под убивается по OOM"
+      - "Медленная база данных"
+      - "Сетевые проблемы ingress"
+      - "Ошибка в DNS"
+    explain: |
+      Цепочка: релиз в 11:05 → память растёт пилой → `OOMKilled` (код 137) → под перезапускается → 502 на время рестарта. Решение: откат, затем ограничить кэш (размер, вытеснение).
+      **Урок для QA:** длительный нагрузочный прогон или мониторинг памяти на стенде поймал бы утечку до продакшена.
+
+  - id: kafka-lag
+    title: Заказы застряли в PAID
+    alert: "**orders_stuck_in_paid > 50** — prod. Обычно 0–3."
+    question: Почему заказы не переходят в READY?
+    tabs:
+      - name: 📈 Метрики
+        text: |
+          Kafka consumer group kitchen-service, топик orders
+            lag: 0 → 1 840 сообщений, растёт с 14:32
+          kitchen-service: CPU 2%, сообщения/сек обработано: 0
+          orders-service: публикует ~3 события/сек (как обычно)
+      - name: 📜 Логи
+        text: |
+          14:32:07 ERROR kitchen-service  OrderEventsListener : Failed to process record offset=55120
+          com.fasterxml.jackson.databind.exc.InvalidFormatException: Cannot deserialize value of type `java.math.BigDecimal` from String "498,00"
+          14:32:07 INFO  kitchen-service  : Seeking to offset 55120 for partition orders-1
+          14:32:08 ERROR kitchen-service  : Failed to process record offset=55120 ...
+          (повторяется каждую секунду)
+      - name: 🧵 Трейсы
+        text: Трейсы обработки событий в kitchen-service отсутствуют с 14:32.
+      - name: 🚀 Деплои
+        text: |
+          14:30  orders-service v5.3.0  «Форматирование сумм для отображения в чеке»
+      - name: ⎈ kubectl
+        text: |
+          $ kubectl get pods -n prod | grep kitchen
+          kitchen-service-5b7d-qq2  1/1  Running  0  3d
+    options:
+      - "Новый orders-service пишет сумму в событие строкой с запятой; consumer бесконечно падает на этом сообщении (poison message)"
+      - "Kafka недоступна"
+      - "kitchen-service перегружен по CPU"
+      - "Повар не нажал кнопку «Готово»"
+    explain: |
+      Лаг растёт, CPU низкий, в логах — одна и та же ошибка десериализации на одном offset: «отравленное сообщение» блокирует партицию. Причина — изменение формата события в релизе 5.3.0 (нарушение контракта!).
+      **Решение:** откат/исправление формата, пропуск или dead letter queue для битых сообщений.
+      **Урок для QA:** контрактные тесты событий Kafka (схема полей и форматов) ловят такое до продакшена — см. тренажёр API Circus.
+
+  - id: db-pool
+    title: Всё медленно после рекламной рассылки
+    alert: "**api p99 > 3s** — prod, все эндпоинты."
+    question: Где узкое место?
+    tabs:
+      - name: 📈 Метрики
+        text: |
+          rps: 120 → 610 (рассылка в 10:00)
+          p99 всех эндпоинтов: 3–10 с
+          orders-service CPU: 35%
+          PostgreSQL CPU: 22%, активных соединений: 10 из max 200
+          HikariCP orders-service: active=10/10, pending=184
+      - name: 📜 Логи
+        text: |
+          10:04:51 WARN  HikariPool-1 - Connection is not available, request timed out after 30000ms (total=10, active=10, idle=0, waiting=184)
+          10:04:51 ERROR o.h.e.j.s.SqlExceptionHelper : Unable to acquire JDBC Connection
+      - name: 🧵 Трейсы
+        text: |
+          GET /api/products                      6 210 ms
+           ├─ getConnection (HikariPool)         6 180 ms ❗
+           └─ SELECT ... FROM products              8 ms
+      - name: 🚀 Деплои
+        text: Деплоев сегодня не было.
+      - name: ⎈ kubectl
+        text: |
+          $ kubectl top pods -n prod
+          orders-service-xx   cpu 350m   memory 900Mi
+          postgres-0          cpu 220m   memory 2Gi
+    options:
+      - "Пул соединений к БД (10) слишком мал для выросшей нагрузки — запросы ждут свободное соединение"
+      - "База данных перегружена медленными запросами"
+      - "Нехватка CPU в orders-service"
+      - "Ошибка в последнем релизе"
+    explain: |
+      Сам SQL выполняется за 8 мс, а получение соединения — 6 с. База почти не нагружена, а пул HikariCP исчерпан (`waiting=184`). Решение: увеличить `maximumPoolSize` (с учётом лимитов БД), масштабировать сервис.
+      **Урок для QA:** нагрузочный тест перед маркетинговыми акциями.
+
+  - id: cert
+    title: Мобильное приложение не может войти
+    alert: "**mobile login success rate < 50%** — prod. Веб-версия работает."
+    question: Первопричина?
+    tabs:
+      - name: 📈 Метрики
+        text: |
+          auth-service: rps 30 (обычно 80), errors 0%
+          Запросы от mobile-app: упали на 70% с 00:00
+          Запросы из браузеров: в норме
+      - name: 📜 Логи
+        text: |
+          auth-service: ошибок нет.
+          Отзывы в магазине приложений: «SSL error», «Не удаётся установить безопасное соединение» (Android 7–9).
+      - name: 🧵 Трейсы
+        text: Трейсов от проблемных мобильных клиентов нет — запросы не доходят до сервисов.
+      - name: 🚀 Деплои
+        text: |
+          23:55  ingress: обновлён TLS-сертификат (новый центр сертификации), включён только TLS 1.3
+      - name: ⎈ kubectl
+        text: |
+          $ kubectl get pods -n prod | grep auth
+          auth-service-...  1/1  Running  0  12d
+    options:
+      - "Изменение TLS на ingress (новый CA и только TLS 1.3) не поддерживается старыми Android — соединение рвётся до сервиса"
+      - "Ошибка в auth-service"
+      - "Пользователи забыли пароли"
+      - "База данных пользователей недоступна"
+    explain: |
+      Сервис «здоров» — запросы просто не доходят. Совпадение по времени с изменением ingress и жалобы «SSL error» на старых Android указывают на TLS.
+      **Урок для QA:** изменения инфраструктуры тоже требуют проверки на матрице устройств и версий ОС.

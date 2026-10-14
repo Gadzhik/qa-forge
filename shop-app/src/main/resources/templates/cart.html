@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Корзина')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1>Корзина</h1>
+    <p th:if="${#lists.isEmpty(cart.items)}" class="empty" data-testid="cart-empty">Корзина пуста</p>
+    <table th:unless="${#lists.isEmpty(cart.items)}" class="table" data-testid="cart-table">
+        <thead><tr><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th></th></tr></thead>
+        <tbody>
+        <tr th:each="l : ${cart.items}" data-testid="cart-row" th:attr="data-product-id=${l.productId}">
+            <td data-testid="cart-item-name" th:text="${l.emoji} + ' ' + ${l.name}"></td>
+            <td data-testid="cart-item-price" th:text="${l.price}"></td>
+            <td data-testid="cart-item-quantity" th:text="${l.quantity}"></td>
+            <td data-testid="cart-item-total" th:text="${l.lineTotal}"></td>
+            <td>
+                <form action="/cart/remove" method="post">
+                    <input type="hidden" name="productId" th:value="${l.productId}">
+                    <button type="submit" class="link-button" data-testid="cart-remove">Удалить</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <p class="total">Итого: <b data-testid="cart-total" th:text="${cart.total} + ' ₽'">0 ₽</b></p>
+    <form action="/checkout" method="post" class="row" data-testid="checkout-form">
+        <input type="text" name="promoCode" placeholder="Промокод" data-testid="promo-input">
+        <button type="submit" class="btn" data-testid="checkout-button">Оформить заказ</button>
+    </form>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

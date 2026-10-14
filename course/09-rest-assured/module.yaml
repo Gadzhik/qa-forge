@@ -1,0 +1,3 @@
+title: "API-автотесты: REST Assured"
+summary: "given/when/then, параметры и извлечение данных, POJO, CRUD, спецификации и логирование, JWT, JSON Schema, обёртки, файлы, Datafaker, свои аннотации"
+icon: "🔌"

@@ -1,0 +1,14 @@
+# Jenkins в Docker для урока 15.8.
+#   docker compose -f ci/jenkins/docker-compose.yml up -d
+#   Открыть: http://localhost:8085   Пароль первого входа: docker exec qa-jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk21   # Jenkins LTS на Java 21
+    container_name: qa-jenkins
+    ports:
+      - "8085:8080"                    # веб-интерфейс
+      - "50000:50000"                  # порт для подключения агентов
+    volumes:
+      - jenkins_home:/var/jenkins_home # настройки и задачи сохраняются между перезапусками
+volumes:
+  jenkins_home:

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Модуль 7: JUnit 5, AssertJ, TestNG.
+  Здесь вы пишете ТЕСТЫ в src/test/java/ru/qacourse/m07/tasks.
+  Тестируемые классы (src/main/java/.../sut) содержат «мутантов» — заранее заложенные ошибки,
+  которые проверка включает по очереди: ваш тест должен проходить на правильном коде и падать на каждом мутанте.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ru.qacourse</groupId>
+        <artifactId>exercises-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+    <artifactId>m07-junit</artifactId>
+    <name>m07 — JUnit 5, AssertJ, TestNG</name>
+
+    <dependencies>
+        <!-- JUnit 5 нужен и в main: там лежат ваши расширения (ext) -->
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId></dependency>
+        <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.testng</groupId><artifactId>testng</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>ru.qacourse</groupId><artifactId>test-support</artifactId><scope>test</scope></dependency>
+    </dependencies>
+</project>

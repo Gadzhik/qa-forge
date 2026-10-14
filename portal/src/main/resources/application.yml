@@ -1,0 +1,15 @@
+# Настройки портала курса
+server:
+  port: 8080
+
+spring:
+  application:
+    name: qa-course-portal
+  web:
+    resources:
+      cache:
+        period: 0   # не кэшировать статику: правки видны сразу
+
+course:
+  root: ""            # корень проекта; пусто = искать автоматически (папка с mvnw и course/)
+  progress-file: ""   # файл прогресса; пусто = ~/.qa-course/progress.json

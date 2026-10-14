@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><link rel="stylesheet" href="/css/app.css"></head>
+<body class="container">
+<h2 data-testid="inner-title">Я внутри iframe</h2>
+<input id="inner-input" data-testid="inner-input" placeholder="Введите текст">
+<button class="btn" id="inner-btn" data-testid="inner-btn"
+        onclick="document.getElementById('inner-result').textContent = 'Вы ввели: ' + document.getElementById('inner-input').value">OK</button>
+<p id="inner-result" data-testid="inner-result"></p>
+</body></html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Таблица')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Таблица</h1>
+<p>Кликните по заголовку, чтобы отсортировать.</p>
+<table class="table sortable" id="staff" data-testid="staff-table">
+  <thead><tr>
+    <th data-col="0" data-testid="col-name">Имя</th>
+    <th data-col="1" data-testid="col-role">Должность</th>
+    <th data-col="2" data-type="num" data-testid="col-salary">Зарплата</th>
+  </tr></thead>
+  <tbody>
+    <tr data-testid="staff-row"><td>Анна</td><td>Повар</td><td>65000</td></tr>
+    <tr data-testid="staff-row"><td>Борис</td><td>Кассир</td><td>48000</td></tr>
+    <tr data-testid="staff-row"><td>Вера</td><td>Менеджер</td><td>90000</td></tr>
+    <tr data-testid="staff-row"><td>Глеб</td><td>Курьер</td><td>55000</td></tr>
+    <tr data-testid="staff-row"><td>Дина</td><td>Повар</td><td>70000</td></tr>
+  </tbody>
+</table>
+<script>
+document.querySelectorAll('#staff th').forEach(th => {
+  let asc = true;
+  th.style.cursor = 'pointer';
+  th.onclick = () => {
+    const col = +th.dataset.col, num = th.dataset.type === 'num', tb = document.querySelector('#staff tbody');
+    const rows = [...tb.rows].sort((a, b) => {
+      const x = a.cells[col].textContent, y = b.cells[col].textContent;
+      return (num ? x - y : x.localeCompare(y, 'ru')) * (asc ? 1 : -1);
+    });
+    rows.forEach(r => tb.appendChild(r)); asc = !asc;
+  };
+});
+</script>
+</main>
+</body>
+</html>

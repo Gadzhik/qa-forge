@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Basic Auth')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground">← Песочница</a>
+<h1 data-testid="basic-auth-success">Вы прошли Basic Auth!</h1>
+<p>Браузер отправил заголовок <code>Authorization: Basic YWRtaW46YWRtaW4=</code> (это base64 от <code>admin:admin</code>).</p>
+</main>
+</body>
+</html>

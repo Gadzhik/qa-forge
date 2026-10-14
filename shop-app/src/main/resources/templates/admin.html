@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Тренажёр')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1>Панель тренажёра</h1>
+    <p>Здесь можно включить заложенные в приложение баги и потренироваться их находить вручную или автотестами.
+        Описания — это то, что «пользователь написал в поддержку».</p>
+    <form action="/admin/reset" method="post" class="inline">
+        <button type="submit" class="btn btn--secondary" data-testid="reset-data">Сбросить данные</button>
+    </form>
+    <form action="/admin/mystery" method="post" class="inline">
+        <input type="number" name="count" value="5" min="1" max="30" style="width:70px" data-testid="mystery-count">
+        <button type="submit" class="btn" data-testid="mystery-start">🎲 Режим загадки</button>
+    </form>
+    <form th:if="${mystery}" action="/admin/reveal" method="post" class="inline">
+        <button type="submit" class="btn btn--secondary" data-testid="mystery-reveal">👀 Раскрыть</button>
+    </form>
+    <p th:if="${mystery}" class="alert alert--ok" data-testid="mystery-info">
+        Режим загадки: включено багов — <b th:text="${enabledCount}"></b>. Какие именно — найдите сами.</p>
+    <form action="/admin/bugs" method="post" data-testid="bugs-form">
+        <table class="table">
+            <thead><tr><th>Вкл.</th><th>Код</th><th>Раздел</th><th>Жалоба пользователя</th></tr></thead>
+            <tbody>
+            <tr th:each="b : ${bugs}" data-testid="bug-row">
+                <td><input type="checkbox" name="bug" th:value="${b.code}" th:checked="${b.enabled and !mystery}"
+                           th:attr="data-testid='bug-' + ${b.code}"></td>
+                <td th:text="${b.code}"></td>
+                <td th:text="${b.area}"></td>
+                <td><b th:text="${b.title}"></b><br><small th:text="${b.report}"></small></td>
+            </tr>
+            </tbody>
+        </table>
+        <button type="submit" class="btn" data-testid="save-bugs">Сохранить</button>
+    </form>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

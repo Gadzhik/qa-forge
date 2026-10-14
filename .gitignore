@@ -1,0 +1,20 @@
+# Результаты сборки Maven/Gradle
+target/
+build/
+.gradle/
+# Настройки IDE
+.idea/
+*.iml
+.vscode/
+# Отчёты и логи
+allure-results/
+allure-report/
+logs/
+*.log
+# Системные файлы
+.DS_Store
+Thumbs.db
+# Аварийные дампы AspectJ (появляются при сбоях weaving в Allure)
+ajcore*.txt
+# Временные файлы
+*.tmp

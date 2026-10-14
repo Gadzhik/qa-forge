@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Бесконечная прокрутка')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Бесконечная прокрутка</h1>
+<p>Прокрутите вниз — подгрузятся новые элементы (до 100).</p>
+<ul id="feed" data-testid="feed"></ul>
+<div id="feed-end" data-testid="feed-end" hidden>Это всё!</div>
+<script>
+let n = 0;
+function more() {
+  const f = document.getElementById('feed');
+  for (let i = 0; i < 20 && n < 100; i++) {
+    const li = document.createElement('li'); li.dataset.testid = 'feed-item'; li.textContent = 'Бургер №' + (++n);
+    li.style.height = '40px'; f.appendChild(li);
+  }
+  if (n >= 100) document.getElementById('feed-end').hidden = false;
+}
+more();
+window.addEventListener('scroll', () => {
+  if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 50) setTimeout(more, 300);
+});
+</script>
+</main>
+</body>
+</html>

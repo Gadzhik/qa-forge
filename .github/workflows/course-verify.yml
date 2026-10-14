@@ -1,0 +1,30 @@
+# Проверка самого курса на трёх ОС: эталонные решения должны проходить все проверки.
+name: Проверка курса
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Эталонные решения проходят проверки
+        shell: bash                      # bash есть и на Windows-раннерах GitHub
+        env:
+          # Docker с Linux-контейнерами есть только на Ubuntu-раннерах
+          SKIP_DOCKER: ${{ matrix.os == 'ubuntu-latest' && '0' || '1' }}
+        run: |
+          if [ "$SKIP_DOCKER" = "0" ]; then docker compose up -d kafka; fi
+          tools/verify-solutions.sh

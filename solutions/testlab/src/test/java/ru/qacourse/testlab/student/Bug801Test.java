@@ -1,0 +1,49 @@
+package ru.qacourse.testlab.student;
+
+import io.restassured.http.ContentType;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import ru.qacourse.support.ShopConfig;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+
+public class Bug801Test {
+    private final String base = ShopConfig.baseUrl();
+
+    private String login(String username, String password) {
+        return given().baseUri(base).contentType(ContentType.JSON)
+                .body(Map.of("username", username, "password", password))
+                .post("/api/auth/login").then().statusCode(200).extract().path("token");
+    }
+
+    private int orderOf(String token, int productId, int quantity, String promo) {
+        given().baseUri(base).auth().oauth2(token).contentType(ContentType.JSON)
+                .body(Map.of("productId", productId, "quantity", quantity)).post("/api/cart/items").then().statusCode(200);
+        return given().baseUri(base).auth().oauth2(token).contentType(ContentType.JSON)
+                .body(promo == null ? Map.of() : Map.of("promoCode", promo))
+                .post("/api/orders").then().statusCode(201).extract().path("id");
+    }
+
+    @Test
+    @DisplayName("В PDF-чеке итог со скидкой")
+    void receiptHasDiscountedTotal() throws Exception {
+        String token = login("user", "user123");
+        int id = orderOf(token, 1, 2, "SALE10");
+        String total = given().baseUri(base).auth().oauth2(token).get("/api/orders/" + id)
+                .then().extract().jsonPath().getString("total");
+        byte[] pdf = given().baseUri(base).auth().oauth2(token).get("/api/orders/" + id + "/receipt.pdf")
+                .then().statusCode(200).extract().asByteArray();
+        try (PDDocument doc = Loader.loadPDF(pdf)) {
+            String text = new PDFTextStripper().getText(doc);
+            assertThat(text).contains("ИТОГО: " + new BigDecimal(total).setScale(2).toPlainString());
+        }
+    }
+}

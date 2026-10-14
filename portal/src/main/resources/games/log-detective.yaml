@@ -1,0 +1,365 @@
+# Log Detective: лог упавшего теста → первопричина. Первый вариант в options — правильный (в игре варианты перемешиваются).
+levels:
+  - title: Тридцать красных тестов за 2 секунды
+    tag: REST Assured
+    blocks:
+      - label: Лог прогона
+        lang: plaintext
+        text: |
+          [INFO] Running ru.qacourse.api.CartTest
+          [ERROR] Tests run: 12, Failures: 0, Errors: 12, Skipped: 0, Time elapsed: 0.84 s <<< FAILURE!
+          [ERROR] addProductToCart  Time elapsed: 0.07 s  <<< ERROR!
+          java.net.ConnectException: Connection refused
+              at java.base/sun.nio.ch.Net.connect0(Native Method)
+              at org.apache.http.impl.conn.DefaultHttpClientConnectionOperator.connect(DefaultHttpClientConnectionOperator.java:151)
+              at io.restassured.internal.RequestSpecificationImpl.sendRequest(RequestSpecificationImpl.groovy:1258)
+              at ru.qacourse.api.CartTest.addProductToCart(CartTest.java:31)
+          ...
+          [ERROR] Tests run: 30, Failures: 0, Errors: 30, Skipped: 0
+    question: В чём первопричина?
+    options:
+      - "Приложение не запущено или тесты стучатся не на тот адрес/порт"
+      - "В корзине баг — она не добавляет товары"
+      - "Неверная JSON-схема"
+      - "Тесты запущены параллельно"
+    explain: |
+      `Connection refused` — до HTTP дело не дошло: на этом порту никто не слушает. Массовое падение всех тестов за доли секунды — признак проблемы **окружения**. Проверьте, запущен ли QA Burger и какой `shop.url` у тестов.
+
+  - title: Ожидали 200
+    tag: REST Assured
+    blocks:
+      - label: Сообщение
+        lang: plaintext
+        text: |
+          java.lang.AssertionError: 1 expectation failed.
+          Expected status code <200> but was <401>.
+
+              at ru.qacourse.api.OrdersTest.userSeesOwnOrders(OrdersTest.java:44)
+      - label: Код теста
+        lang: java
+        text: |
+          given().spec(spec)
+          .when().get("/api/orders")
+          .then().statusCode(200);
+    question: Наиболее вероятная причина?
+    options:
+      - "В запросе нет токена авторизации (или он просрочен)"
+      - "Сервер упал"
+      - "Эндпоинт /api/orders не существует"
+      - "Нет прав администратора"
+    explain: |
+      **401 Unauthorized** — сервер не знает, кто вы. Скорее всего, спецификация не добавляет заголовок `Authorization: Bearer ...`. Если бы токен был, но прав не хватало, пришёл бы **403**, если бы эндпоинта не было — **404**.
+
+  - title: Сумма не сходится
+    tag: AssertJ
+    blocks:
+      - label: Сообщение
+        lang: plaintext
+        text: |
+          org.opentest4j.AssertionFailedError:
+          expected: 869.70
+           but was: 869.7
+              at ru.qacourse.api.OrderTotalTest.totalIsCorrect(OrderTotalTest.java:52)
+      - label: Строка 52
+        lang: java
+        text: |
+          assertThat(order.total()).isEqualTo(new BigDecimal("869.70"));
+    question: Что не так?
+    options:
+      - "Ошибка теста — BigDecimal.equals учитывает масштаб, нужно isEqualByComparingTo"
+      - "Баг округления в приложении"
+      - "Неверный JSON в ответе"
+      - "Нужно сравнивать как double"
+    explain: |
+      `new BigDecimal("869.70").equals(new BigDecimal("869.7"))` — **false**: разный scale. Значения равны численно. Правильно: `isEqualByComparingTo("869.70")`. А сравнение через `double` даст новые проблемы с точностью.
+
+  - title: Элемент не найден
+    tag: Selenide
+    blocks:
+      - label: Сообщение
+        lang: plaintext
+        text: |
+          Element not found {[data-testid='order-status']}
+          Expected: text "READY"
+          Timeout: 4 s.
+          Screenshot: file:/build/reports/tests/1697040000.0.png
+          Page source: file:/build/reports/tests/1697040000.0.html
+          Caused by: NoSuchElementException: no such element: Unable to locate element: {"method":"css selector","selector":"[data-testid='order-status']"}
+      - label: На скриншоте
+        lang: plaintext
+        text: |
+          Страница входа: «Войдите, чтобы увидеть заказы». Поля логин/пароль.
+    question: Что произошло?
+    options:
+      - "Тест не авторизовался — открылась страница логина вместо заказа"
+      - "Статус READY не наступил за 4 секунды"
+      - "Неверный локатор data-testid"
+      - "Браузер не запустился"
+    explain: |
+      Скриншот — лучший друг UI-тестов. Элемента нет потому, что мы вообще не на той странице: сессия не установлена (например, cookie подставили до открытия домена). Увеличение таймаута тут не поможет.
+
+  - title: Статус почти готов
+    tag: Awaitility
+    blocks:
+      - label: Сообщение
+        lang: plaintext
+        text: |
+          org.opentest4j.AssertionFailedError:
+          expected: "READY"
+           but was: "PAID"
+              at ru.qacourse.api.OrderFlowTest.orderBecomesReady(OrderFlowTest.java:71)
+      - label: Код
+        lang: java
+        text: |
+          api.pay(orderId);
+          assertThat(api.order(orderId).status()).isEqualTo("READY");
+    question: Первопричина?
+    options:
+      - "Нет ожидания асинхронного перехода статуса — нужен Awaitility"
+      - "Баг — заказ не переходит в READY"
+      - "Оплата не прошла"
+      - "Неверный orderId"
+    explain: |
+      Статус меняется асинхронно через несколько секунд после оплаты. Проверка сразу после `pay` иногда видит PAID — классический flaky-тест. Решение: `await().atMost(10, SECONDS).untilAsserted(...)`. Багом это было бы, если бы статус не менялся и после ожидания.
+
+  - title: Не тот JSON
+    tag: Jackson
+    blocks:
+      - label: Сообщение
+        lang: plaintext
+        text: |
+          com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException: Unrecognized field "imageUrl"
+          (class ru.qacourse.model.Product), not marked as ignorable (4 known properties: "id", "name", "price", "category"])
+           at [Source: (String)"{"id":1,"name":"Чизбургер","price":249.00,"category":"BURGERS","imageUrl":"/img/1.png"}"; line: 1, column: 87]
+    question: Что случилось?
+    options:
+      - "В ответе появилось новое поле, а модель строго запрещает неизвестные поля"
+      - "Сервер вернул невалидный JSON"
+      - "Поле price имеет неверный тип"
+      - "Jackson не подключён"
+    explain: |
+      Разработчики добавили `imageUrl`. Строгая модель упала — хорошо, если вы этого хотели (контракт-тест). Если нет — добавьте поле или `@JsonIgnoreProperties(ignoreUnknown = true)`. В любом случае это не «баг продукта», а изменение контракта, о котором стоит договориться.
+
+  - title: Падает только в CI
+    tag: Окружение
+    blocks:
+      - label: Лог CI
+        lang: plaintext
+        text: |
+          [ERROR] checkoutButtonVisible  Time elapsed: 6.2 s  <<< ERROR!
+          com.codeborne.selenide.ex.ElementShould: Element should be visible {[data-testid='checkout']}
+          Element: '<button data-testid="checkout" style="...">Оформить</button>'
+          Actual value: hidden, Css[display=none]
+          Browser: chrome 130 headless, window size: 800x600
+      - label: Локально
+        lang: plaintext
+        text: Тест зелёный. Монитор 1920x1080.
+    question: Причина?
+    options:
+      - "В CI маленькое окно браузера — на узком экране кнопка в свёрнутом мобильном меню"
+      - "Баг в продукте"
+      - "В CI другая версия Java"
+      - "Нет сети в CI"
+    explain: |
+      Элемент **найден**, но скрыт (`display=none`) — при ширине 800 px срабатывает адаптивная вёрстка. Задайте размер окна в конфигурации (`Configuration.browserSize = "1920x1080"`) или тестируйте мобильную вёрстку отдельно.
+
+  - title: Один и тот же пользователь
+    tag: Данные
+    blocks:
+      - label: Сообщение
+        lang: plaintext
+        text: |
+          java.lang.AssertionError: 1 expectation failed.
+          Expected status code <201> but was <409>.
+          Response body: {"code":"USER_EXISTS","message":"Пользователь test_user уже существует"}
+            at ru.qacourse.api.RegistrationTest.registerNewUser(RegistrationTest.java:28)
+      - label: Код
+        lang: java
+        text: |
+          var req = new RegisterRequest("test_user", "test@mail.ru", "secret123");
+    question: Почему тест проходит только при первом запуске?
+    options:
+      - "Захардкоженные данные — при повторном запуске пользователь уже существует"
+      - "Регистрация сломана"
+      - "Пароль слишком короткий"
+      - "Не хватает заголовка Content-Type"
+    explain: |
+      Тесты должны создавать **уникальные** данные: `"user_" + UUID.randomUUID()` или Datafaker. Сервер корректно отвечает 409 — это не баг.
+
+  - title: NullPointerException в тесте
+    tag: Java
+    blocks:
+      - label: Стектрейс
+        lang: plaintext
+        text: |
+          java.lang.NullPointerException: Cannot invoke "String.equals(Object)" because the return value of "ru.qacourse.model.Product.category()" is null
+              at ru.qacourse.api.CatalogTest.lambda$filterByCategory$0(CatalogTest.java:40)
+              at java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:178)
+              ...
+              at ru.qacourse.api.CatalogTest.filterByCategory(CatalogTest.java:41)
+      - label: Код
+        lang: java
+        text: |
+          long drinks = products.stream().filter(p -> p.category().equals("DRINKS")).count();
+    question: Что делать в первую очередь?
+    options:
+      - "Посмотреть ответ API — у какого-то товара category = null (возможно баг или имя поля не совпало с моделью)"
+      - "Обернуть код в try/catch"
+      - "Удалить фильтр"
+      - "Перезапустить тест"
+    explain: |
+      NPE в тесте — сигнал, что данные не такие, как вы ожидали. Причин две: в API действительно пришёл `null` (тогда это может быть баг) или JSON-поле называется иначе и Jackson не заполнил его. Смотрите вложение с ответом. Удобный приём — `"DRINKS".equals(p.category())`, но сначала разберитесь, **почему** null.
+
+  - title: Ошибка при старте
+    tag: Maven
+    blocks:
+      - label: Лог
+        lang: plaintext
+        text: |
+          [ERROR] COMPILATION ERROR :
+          [ERROR] /exercises/m09-rest-assured/src/test/java/ru/qacourse/m09/CartTest.java:[5,1] package io.restassured does not exist
+          [ERROR] /exercises/m09-rest-assured/src/test/java/ru/qacourse/m09/CartTest.java:[17,9] cannot find symbol
+            symbol:   method given()
+    question: Что не так?
+    options:
+      - "Зависимость REST Assured не подключена в pom.xml (или подключена не в том модуле)"
+      - "Сервер недоступен"
+      - "Тест падает с ошибкой проверки"
+      - "Неверная версия Java"
+    explain: |
+      Тесты даже не скомпилировались. `package ... does not exist` — Maven не нашёл библиотеку: добавьте `<dependency>` в pom нужного модуля, обновите проект в IDEA (Maven → Reload).
+
+  - title: Kafka молчит
+    tag: Kafka
+    blocks:
+      - label: Сообщение
+        lang: plaintext
+        text: |
+          org.awaitility.core.ConditionTimeoutException: Condition with ru.qacourse.kafka.OrderEventsTest was not fulfilled within 15 seconds.
+            at ru.qacourse.kafka.OrderEventsTest.orderCreatedEventIsSent(OrderEventsTest.java:63)
+      - label: Код consumer'а в тесте
+        lang: java
+        text: |
+          props.put(ConsumerConfig.GROUP_ID_CONFIG, "qa-tests");
+          props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+          consumer.subscribe(List.of("orders"));
+          api.createOrder();          // создаём заказ
+          await().atMost(15, SECONDS).until(() -> poll(consumer).contains(orderId));
+    question: Вероятная причина?
+    options:
+      - "Consumer ещё не получил партиции, когда событие отправили, а offset = latest пропускает его"
+      - "Kafka не умеет хранить сообщения"
+      - "Нужно больше 15 секунд"
+      - "Неверный orderId"
+    explain: |
+      Подписка асинхронная: пока consumer не получил партиции (первый `poll`), событие уже записано, а `latest` начнёт читать с конца. Решения: уникальная group id + `earliest` и фильтр по id, или сначала сделать `poll`, дождаться назначения партиций, потом создавать заказ.
+
+  - title: Запуск по одному — зелёный
+    tag: Независимость
+    blocks:
+      - label: Прогон класса
+        lang: plaintext
+        text: |
+          CartTest > emptyCartTotalIsZero()       FAILED
+              expected: 0
+               but was: 249.00
+          CartTest > addBurger()                  PASSED
+          CartTest > addTwoDrinks()               PASSED
+      - label: Запуск emptyCartTotalIsZero отдельно
+        lang: plaintext
+        text: PASSED
+    question: Первопричина?
+    options:
+      - "Тесты делят одну корзину, и порядок выполнения влияет на результат"
+      - "Баг — пустая корзина стоит 249 ₽"
+      - "Медленный сервер"
+      - "Неправильная кодировка"
+    explain: |
+      Один тест «пачкает» общее состояние другого. Каждый тест должен готовить свои данные: очищать корзину в `@BeforeEach` или работать под новым пользователем.
+
+  - title: 500 на сервере
+    tag: Логи сервиса
+    blocks:
+      - label: Тест
+        lang: plaintext
+        text: |
+          Expected status code <201> but was <500>.
+          Response body: {"code":"INTERNAL_ERROR","traceId":"7f3a9c"}
+      - label: Лог QA Burger (поиск по traceId 7f3a9c)
+        lang: plaintext
+        text: |
+          2026-10-14 10:22:31.118 ERROR [7f3a9c] r.q.s.order.OrderService : Failed to create order
+          org.springframework.dao.DataIntegrityViolationException: could not execute statement;
+            constraint [orders_comment_length]; value too long for type character varying(255)
+    question: Что это?
+    options:
+      - "Баг продукта — длинный комментарий не валидируется и приводит к 500 вместо 400"
+      - "Ошибка теста — нельзя отправлять длинный комментарий"
+      - "Проблема окружения — база недоступна"
+      - "Нормальное поведение"
+    explain: |
+      На неверный ввод сервер должен отвечать **400** с понятной ошибкой, а не 500. Лог по traceId показывает точную причину — приложите его в баг-репорт.
+
+  - title: Click intercepted
+    tag: Selenium
+    blocks:
+      - label: Сообщение
+        lang: plaintext
+        text: |
+          org.openqa.selenium.ElementClickInterceptedException: element click intercepted:
+          Element <button data-testid="add-to-cart-3">...</button> is not clickable at point (412, 618).
+          Other element would receive the click: <div class="toast">Товар добавлен в корзину</div>
+    question: Что делать?
+    options:
+      - "Дождаться исчезновения всплывающего уведомления перед следующим кликом"
+      - "Кликать через JavaScript всегда"
+      - "Добавить Thread.sleep(5000)"
+      - "Это баг — кнопка не работает"
+    explain: |
+      Кнопку закрыло уведомление от предыдущего действия. Правильно — явное ожидание: `$(".toast").should(disappear)`. JS-клик «скрывает» проблему и делает тест непохожим на действия пользователя, а `sleep` медленный и ненадёжный.
+
+  - title: Тест прошёл, но ничего не проверил
+    tag: Качество тестов
+    blocks:
+      - label: Код
+        lang: java
+        text: |
+          @Test
+          void discountApplied() {
+              Response r = given().spec(spec).body(promo("SALE10")).post("/api/cart/promo");
+              r.then().log().all();
+              assertThat(r.statusCode()).isNotNull();
+          }
+      - label: Отчёт
+        lang: plaintext
+        text: "discountApplied PASSED — при включённом BUG-204 (скидка 19% вместо 10%) тоже PASSED"
+    question: В чём проблема?
+    options:
+      - "Проверки бессмысленны — нужно проверять сумму со скидкой, а не что статус не null"
+      - "Нужно больше логов"
+      - "Неверный промокод"
+      - "Тест нужно запускать параллельно"
+    explain: |
+      Тест, который не может упасть, хуже отсутствия теста: он даёт ложную уверенность. Проверьте **результат**: статус 200 и сумму = исходная × 0.9. Именно так работает проверка Test Lab.
+
+  - title: Время на стенде
+    tag: Даты
+    blocks:
+      - label: Сообщение (CI, 00:15)
+        lang: plaintext
+        text: |
+          expected: 2026-10-14
+           but was: 2026-10-13
+            at ru.qacourse.api.OrderDateTest.orderCreatedToday(OrderDateTest.java:22)
+      - label: Код
+        lang: java
+        text: |
+          assertThat(order.createdAt().toLocalDate()).isEqualTo(LocalDate.now());
+    question: Почему падает только после полуночи?
+    options:
+      - "Разные часовые пояса у сервера (UTC) и агента CI (MSK)"
+      - "Баг: заказ создаётся вчерашним числом"
+      - "Медленный CI"
+      - "Ошибка компиляции"
+    explain: |
+      В 00:15 по Москве в UTC ещё вчера. Сравнивайте даты в одной зоне (`ZoneOffset.UTC`) или проверяйте «время создания в пределах минуты от момента запроса».

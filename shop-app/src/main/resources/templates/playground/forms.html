@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Формы')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Формы</h1>
+<form method="post" action="/playground/forms" class="form" id="demo-form" data-testid="demo-form">
+  <label for="first-name">Имя</label>
+  <input id="first-name" name="firstName" data-testid="first-name" required>
+  <label for="email">Email</label>
+  <input id="email" name="email" type="email" data-testid="email">
+  <label for="age">Возраст</label>
+  <input id="age" name="age" type="number" min="0" max="120" data-testid="age">
+  <label for="city">Город</label>
+  <select id="city" name="city" data-testid="city">
+    <option value="">— выберите —</option>
+    <option value="msk">Москва</option>
+    <option value="spb">Санкт-Петербург</option>
+    <option value="kzn">Казань</option>
+  </select>
+  <fieldset data-testid="delivery">
+    <legend>Доставка</legend>
+    <label><input type="radio" name="delivery" value="courier" id="delivery-courier" data-testid="delivery-courier"> Курьер</label>
+    <label><input type="radio" name="delivery" value="pickup" id="delivery-pickup" data-testid="delivery-pickup"> Самовывоз</label>
+  </fieldset>
+  <label><input type="checkbox" name="sauce" value="yes" id="sauce" data-testid="sauce"> Добавить соус</label>
+  <label><input type="checkbox" name="agree" value="yes" id="agree" data-testid="agree"> Согласен с условиями</label>
+  <label for="comment">Комментарий</label>
+  <textarea id="comment" name="comment" data-testid="comment"></textarea>
+  <label for="disabled-input">Неактивное поле</label>
+  <input id="disabled-input" value="нельзя изменить" disabled data-testid="disabled-input">
+  <button type="submit" class="btn" id="submit" data-testid="submit">Отправить</button>
+</form>
+<div th:if="${submitted}" class="result" id="result" data-testid="result">
+  <h2>Отправлено:</h2>
+  <ul><li th:each="e : ${submitted}" th:attr="data-testid='result-' + ${e.key}" th:text="${e.key} + ': ' + ${e.value}"></li></ul>
+</div>
+</main>
+</body>
+</html>

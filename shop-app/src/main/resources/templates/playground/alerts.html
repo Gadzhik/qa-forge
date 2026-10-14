@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Alert, Confirm, Prompt')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Alert, Confirm, Prompt</h1>
+<div class="row">
+  <button class="btn" id="alert-btn" data-testid="alert-btn" onclick="alert('Заказ принят!'); document.getElementById('alert-result').textContent='alert закрыт'">Alert</button>
+  <button class="btn" id="confirm-btn" data-testid="confirm-btn" onclick="document.getElementById('alert-result').textContent = confirm('Удалить заказ?') ? 'Подтверждено' : 'Отменено'">Confirm</button>
+  <button class="btn" id="prompt-btn" data-testid="prompt-btn" onclick="const n = prompt('Как вас зовут?'); document.getElementById('alert-result').textContent = n === null ? 'Prompt отменён' : 'Привет, ' + n + '!'">Prompt</button>
+  <button class="btn" id="delayed-alert-btn" data-testid="delayed-alert-btn" onclick="setTimeout(() => alert('Я опоздал на 2 секунды'), 2000)">Alert через 2 с</button>
+</div>
+<p>Результат: <b id="alert-result" data-testid="alert-result"></b></p>
+</main>
+</body>
+</html>

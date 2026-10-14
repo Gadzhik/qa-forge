@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Песочница')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Песочница</h1>
+<p>Страницы для отработки приёмов UI-автоматизации. У каждого интересного элемента есть <code>id</code> и <code>data-testid</code>.</p>
+<ul class="links" data-testid="playground-links">
+  <li><a href="/playground/forms">Формы: поля, чекбоксы, радио, выпадающие списки</a></li>
+  <li><a href="/playground/alerts">Alert, Confirm, Prompt</a></li>
+  <li><a href="/playground/basic-auth">Basic Auth (admin / admin)</a></li>
+  <li><a href="/playground/iframe">Iframe</a></li>
+  <li><a href="/playground/drag-drop">Drag &amp; Drop</a></li>
+  <li><a href="/playground/hover">Наведение мыши, двойной и правый клик</a></li>
+  <li><a href="/playground/dynamic">Динамические элементы и ожидания</a></li>
+  <li><a href="/playground/table">Таблица с сортировкой</a></li>
+  <li><a href="/playground/upload">Загрузка файла</a></li>
+  <li><a href="/playground/download">Скачивание файлов (TXT, PDF, XLSX)</a></li>
+  <li><a href="/playground/windows">Новые вкладки и окна</a></li>
+  <li><a href="/playground/scroll">Бесконечная прокрутка</a></li>
+  <li><a href="/playground/modal">Модальное окно</a></li>
+</ul>
+</main>
+</body>
+</html>

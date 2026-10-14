@@ -1,0 +1,24 @@
+# Связка «приложение + тесты» в Docker (урок 15.2).
+# Запуск из корня курса:
+#   ./mvnw -q -pl shop-app -am package -DskipTests        # собрать jar приложения для его образа
+#   docker compose -f ci/docker-compose.tests.yml up --build --abort-on-container-exit --exit-code-from tests
+# Результаты Allure окажутся в ci/allure-results.
+services:
+  shop:
+    build: ../shop-app                 # образ QA Burger из shop-app/Dockerfile
+    healthcheck:                       # «здоров», когда порт 8081 принимает соединения
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8081' || exit 1"]
+      interval: 3s
+      retries: 40
+
+  tests:
+    build:
+      context: ..                      # контекст сборки — корень курса
+      dockerfile: ci/tests.Dockerfile
+    environment:
+      SHOP_URL: http://shop:8081       # внутри сети compose сервис доступен по имени
+    volumes:
+      - ./allure-results:/course/exercises/m14-framework/target/allure-results
+    depends_on:
+      shop:
+        condition: service_healthy     # тесты стартуют, только когда приложение готово

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Вкладки и окна')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Вкладки и окна</h1>
+<p><a href="/playground/forms" target="_blank" id="new-tab-link" data-testid="new-tab-link">Открыть формы в новой вкладке</a></p>
+<p><button class="btn" id="new-window-btn" data-testid="new-window-btn"
+   onclick="window.open('/playground/table', 'table', 'width=600,height=400')">Открыть таблицу в новом окне</button></p>
+</main>
+</body>
+</html>

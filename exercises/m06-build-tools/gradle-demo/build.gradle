@@ -1,0 +1,59 @@
+// build.gradle — описание проекта для Gradle (язык Groovy). Каждая строка разобрана в уроке 6.4.
+
+plugins {
+    id 'java'                           // плагин сборки Java: задачи compileJava, test, jar...
+}
+
+group = 'ru.qacourse'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)   // компилировать под Java 21
+    }
+}
+
+repositories {
+    mavenCentral()                      // откуда скачивать библиотеки
+}
+
+dependencies {
+    // testImplementation — библиотека нужна только для тестов
+    testImplementation platform('org.junit:junit-bom:5.13.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.assertj:assertj-core:3.27.7'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'          // русские буквы в исходниках
+}
+
+// Стандартная задача test: запускает все тесты, кроме помеченных @Tag("slow")
+test {
+    useJUnitPlatform {
+        excludeTags 'slow'
+    }
+    testLogging {
+        events 'passed', 'skipped', 'failed'   // печатать результат каждого теста в консоль
+    }
+}
+
+// Своя задача: ./gradlew smokeTest — только тесты с @Tag("smoke")
+tasks.register('smokeTest', Test) {
+    description = 'Запускает только smoke-тесты'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'smoke'
+    }
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
+
+// Свойство из командной строки: ./gradlew test -Dshop.url=http://test-stand:8081
+tasks.withType(Test).configureEach {
+    systemProperty 'shop.url', System.getProperty('shop.url', 'http://localhost:8081')
+}

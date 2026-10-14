@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Скачивание файлов')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Скачивание файлов</h1>
+<ul class="links">
+  <li><a href="/playground/files/sample.txt" id="download-txt" data-testid="download-txt">sample.txt</a></li>
+  <li><a href="/playground/files/menu.pdf" id="download-pdf" data-testid="download-pdf">menu.pdf</a></li>
+  <li><a href="/playground/files/orders.xlsx" id="download-xlsx" data-testid="download-xlsx">orders.xlsx</a></li>
+</ul>
+</main>
+</body>
+</html>

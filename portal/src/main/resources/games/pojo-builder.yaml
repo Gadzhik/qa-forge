@@ -1,0 +1,229 @@
+# POJO Builder: по JSON написать Java-класс. Портал компилирует код (PojoChecker) и делает
+# JSON → объект → JSON строгим Jackson: неизвестные поля запрещены, null в примитив запрещён.
+# rootType — имя корневого типа, если в коде несколько типов и корневой объявлен не первым.
+levels:
+  - id: product
+    title: Товар
+    description: |
+      Самая простая модель. Опишите товар как **record** — компактный неизменяемый класс данных.
+      Имена компонентов record должны совпадать с ключами JSON.
+    json: |
+      {"id": 1, "name": "Чизбургер", "price": 249.00, "available": true}
+    starter: |
+      public record Product(
+          // TODO: id, name, price, available
+      ) {
+      }
+    hint: |
+      `id` — `long`, `name` — `String`, деньги — `BigDecimal` (не double!), `available` — `boolean`.
+    solution: |
+      public record Product(long id, String name, BigDecimal price, boolean available) {
+      }
+
+  - id: product-class
+    title: Товар как обычный класс
+    description: |
+      Тот же JSON, но в виде классического класса с **приватными полями, пустым конструктором, геттерами и сеттерами**.
+      Так пишут, если нужна изменяемая модель (например, для запроса, который правят в тесте).
+    json: |
+      {"id": 1, "name": "Чизбургер", "price": 249.00, "available": true}
+    starter: |
+      public class Product {
+          // TODO: поля, геттеры и сеттеры
+      }
+    hint: |
+      Jackson по умолчанию использует конструктор без параметров и сеттеры при чтении, геттеры — при записи.
+      Для `boolean available` геттер называется `isAvailable()`.
+    solution: |
+      public class Product {
+          private long id;
+          private String name;
+          private BigDecimal price;
+          private boolean available;
+
+          public long getId() { return id; }
+          public void setId(long id) { this.id = id; }
+          public String getName() { return name; }
+          public void setName(String name) { this.name = name; }
+          public BigDecimal getPrice() { return price; }
+          public void setPrice(BigDecimal price) { this.price = price; }
+          public boolean isAvailable() { return available; }
+          public void setAvailable(boolean available) { this.available = available; }
+      }
+
+  - id: snake-case
+    title: Имена в snake_case
+    description: |
+      Бэкенд отдаёт поля в стиле `snake_case`, а в Java принято `camelCase`. Свяжите их аннотацией `@JsonProperty`.
+      Импорт: `import com.fasterxml.jackson.annotation.JsonProperty;`
+    json: |
+      {"order_id": 42, "total_price": 498.00, "promo_code": "SALE10"}
+    starter: |
+      import com.fasterxml.jackson.annotation.JsonProperty;
+
+      public record OrderSummary(
+          // TODO
+      ) {
+      }
+    hint: |
+      `@JsonProperty("order_id") long orderId` — аннотация ставится прямо на компонент record.
+    solution: |
+      import com.fasterxml.jackson.annotation.JsonProperty;
+
+      public record OrderSummary(
+              @JsonProperty("order_id") long orderId,
+              @JsonProperty("total_price") BigDecimal totalPrice,
+              @JsonProperty("promo_code") String promoCode) {
+      }
+
+  - id: nullable
+    title: Может быть null
+    description: |
+      Иногда поле приходит как `null`. Примитив (`int`, `long`) не может хранить null — строгий Jackson упадёт.
+      Подберите типы так, чтобы JSON прочитался.
+    json: |
+      {"id": 7, "comment": null, "rating": null, "verified": false}
+    starter: |
+      public record Review(long id, String comment, int rating, boolean verified) {
+      }
+    hint: |
+      Вместо `int` используйте обёртку `Integer` — она может быть `null`.
+    solution: |
+      public record Review(long id, String comment, Integer rating, boolean verified) {
+      }
+
+  - id: list
+    title: Список внутри
+    description: |
+      У заказа есть массив позиций. Опишите **два** типа: позицию и заказ. В одном файле можно объявить
+      несколько record (второй — без `public`). Корневой тип — `Order`, он должен идти **первым**.
+    json: |
+      {
+        "id": 42,
+        "status": "PAID",
+        "items": [
+          {"productId": 1, "quantity": 2, "price": 249.00},
+          {"productId": 3, "quantity": 1, "price": 129.00}
+        ]
+      }
+    starter: |
+      public record Order(long id, String status /* TODO: items */) {
+      }
+
+      record OrderItem(/* TODO */) {
+      }
+    hint: |
+      JSON-массив → `List<OrderItem>`.
+    solution: |
+      public record Order(long id, String status, List<OrderItem> items) {
+      }
+
+      record OrderItem(long productId, int quantity, BigDecimal price) {
+      }
+
+  - id: enum
+    title: Перечисление статусов
+    description: |
+      Статус заказа — одно из фиксированных значений. Опишите его как `enum`: так компилятор не даст опечататься,
+      а неизвестный статус сразу уронит десериализацию (это хорошая проверка контракта!).
+      Корневой тип — `Order`.
+    json: |
+      {"id": 42, "status": "READY"}
+    starter: |
+      public record Order(long id, OrderStatus status) {
+      }
+
+      enum OrderStatus {
+          // TODO: NEW, PAID, COOKING?, READY...
+      }
+    hint: |
+      Значения enum должны совпадать со строками JSON: `NEW, PAID, READY, CANCELLED`.
+    solution: |
+      public record Order(long id, OrderStatus status) {
+      }
+
+      enum OrderStatus {
+          NEW, PAID, READY, CANCELLED
+      }
+
+  - id: nested
+    title: Вложенные объекты
+    description: |
+      Пользователь с вложенным адресом и списком ролей. Корневой тип — `User`.
+    json: |
+      {
+        "id": 5,
+        "username": "user",
+        "address": {"city": "Москва", "street": "Тверская", "house": "1"},
+        "roles": ["USER", "VIP"]
+      }
+    starter: |
+      public record User(/* TODO */) {
+      }
+    hint: |
+      Вложенный JSON-объект → отдельный record `Address`. Массив строк → `List<String>`.
+      `house` — строка (бывают «1к2»).
+    solution: |
+      public record User(long id, String username, Address address, List<String> roles) {
+      }
+
+      record Address(String city, String street, String house) {
+      }
+
+  - id: dates
+    title: Даты и время
+    description: |
+      Дата-время в формате ISO-8601 с `Z` на конце — момент времени в UTC. В Java для этого есть `Instant`,
+      для «просто даты» — `LocalDate`. Jackson умеет их читать (модуль JavaTimeModule).
+    json: |
+      {"orderId": 42, "createdAt": "2026-10-14T10:22:31Z", "deliveryDate": "2026-10-15"}
+    starter: |
+      public record OrderDates(long orderId /* TODO */) {
+      }
+    hint: |
+      `Instant createdAt`, `LocalDate deliveryDate` (импорты java.time добавятся сами).
+    solution: |
+      public record OrderDates(long orderId, Instant createdAt, LocalDate deliveryDate) {
+      }
+
+  - id: page
+    title: Страница каталога
+    description: |
+      Ответ с пагинацией: список товаров и служебные поля. Корневой тип — `ProductPage`.
+    json: |
+      {
+        "content": [
+          {"id": 1, "name": "Чизбургер", "price": 249.00, "category": "BURGERS"},
+          {"id": 2, "name": "Веганбургер", "price": 319.00, "category": "BURGERS"}
+        ],
+        "totalElements": 12,
+        "totalPages": 6,
+        "number": 0,
+        "size": 2
+      }
+    starter: |
+      public record ProductPage(/* TODO */) {
+      }
+    hint: |
+      `List<Product> content` + четыре числовых поля. `Product` — отдельный record с `category` строкой или enum.
+    solution: |
+      public record ProductPage(List<Product> content, long totalElements, int totalPages, int number, int size) {
+      }
+
+      record Product(long id, String name, BigDecimal price, String category) {
+      }
+
+  - id: map
+    title: Словарь
+    description: |
+      Иногда ключи объекта заранее неизвестны: «название товара → количество». Такой объект читается в `Map`.
+    json: |
+      {"cartId": 9, "quantities": {"Чизбургер": 2, "Кола": 1, "Картофель фри": 3}}
+    starter: |
+      public record CartQuantities(long cartId /* TODO */) {
+      }
+    hint: |
+      `Map<String, Integer> quantities`.
+    solution: |
+      public record CartQuantities(long cartId, Map<String, Integer> quantities) {
+      }

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Модуль 13: асинхронность (Awaitility) и Kafka.
+  Задание 13.1 работает без Docker. Для задания 13.4 нужна Kafka: docker compose up -d kafka,
+  и QA Burger с профилем kafka или docker (команда в уроке 13.4).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ru.qacourse</groupId>
+        <artifactId>exercises-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+    <artifactId>m13-kafka-async</artifactId>
+    <name>m13 — Асинхронность и Kafka</name>
+
+    <dependencies>
+        <dependency><groupId>org.awaitility</groupId><artifactId>awaitility</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.apache.kafka</groupId><artifactId>kafka-clients</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>io.rest-assured</groupId><artifactId>rest-assured</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>ru.qacourse</groupId><artifactId>test-support</artifactId><scope>test</scope></dependency>
+    </dependencies>
+</project>

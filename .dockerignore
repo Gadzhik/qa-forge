@@ -1,0 +1,8 @@
+# Что НЕ отправлять в Docker при сборке образов (ускоряет сборку и уменьшает образ)
+**/target/
+**/build/
+**/.gradle/
+.git/
+.idea/
+logs/
+**/allure-results/

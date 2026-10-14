@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Модуль 14: мини-фреймворк API-тестов QA Burger с отчётом Allure.
+  Запуск тестов:      ./mvnw -f exercises/m14-framework/pom.xml test
+  Отчёт Allure:       ./mvnw -f exercises/m14-framework/pom.xml allure:serve
+  Структура и каждая строка этого файла разобраны в уроках 14.1 и 14.2.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ru.qacourse</groupId>
+        <artifactId>exercises-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+    <artifactId>m14-framework</artifactId>
+    <name>m14 — Фреймворк и Allure</name>
+
+    <dependencies>
+        <dependency><groupId>io.rest-assured</groupId><artifactId>rest-assured</artifactId></dependency>
+        <dependency><groupId>org.aeonbits.owner</groupId><artifactId>owner</artifactId></dependency>
+        <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId></dependency>
+        <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId></dependency>
+        <!-- Allure: интеграция с JUnit 5 и REST Assured -->
+        <dependency><groupId>io.qameta.allure</groupId><artifactId>allure-junit5</artifactId></dependency>
+        <dependency><groupId>io.qameta.allure</groupId><artifactId>allure-rest-assured</artifactId></dependency>
+        <!-- AspectJ: нужен, чтобы работали @Step и @Attachment -->
+        <dependency><groupId>org.aspectj</groupId><artifactId>aspectjweaver</artifactId><version>${aspectj.version}</version><scope>test</scope></dependency>
+        <dependency><groupId>ru.qacourse</groupId><artifactId>test-support</artifactId><scope>test</scope></dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Агент AspectJ «вплетает» код Allure в методы с @Step во время загрузки классов -->
+                    <argLine>-javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"</argLine>
+                    <systemPropertyVariables>
+                        <!-- куда Allure складывает результаты -->
+                        <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- mvn allure:serve — построить HTML-отчёт и открыть в браузере; allure:report — только построить -->
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>2.18.0</version>
+                <configuration>
+                    <reportVersion>2.46.1</reportVersion>
+                    <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

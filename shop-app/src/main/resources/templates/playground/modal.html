@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Модальное окно')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Модальное окно</h1>
+<button class="btn" id="open-modal" data-testid="open-modal" onclick="document.getElementById('modal').hidden=false">Открыть</button>
+<div id="modal" class="modal" data-testid="modal" hidden>
+  <div class="modal__box" role="dialog" aria-labelledby="modal-title">
+    <h2 id="modal-title">Подтвердите заказ</h2>
+    <p>Классический бургер × 2</p>
+    <button class="btn" id="modal-ok" data-testid="modal-ok"
+      onclick="document.getElementById('modal').hidden=true; document.getElementById('modal-result').textContent='Подтверждено'">OK</button>
+    <button class="btn btn--secondary" id="modal-close" data-testid="modal-close"
+      onclick="document.getElementById('modal').hidden=true; document.getElementById('modal-result').textContent='Закрыто'">Закрыть</button>
+  </div>
+</div>
+<p>Результат: <b id="modal-result" data-testid="modal-result"></b></p>
+</main>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="DeliveryService"
+             targetNamespace="http://qaburger.local/delivery"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://qaburger.local/delivery"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <types>
+        <xsd:schema targetNamespace="http://qaburger.local/delivery" elementFormDefault="qualified">
+            <xsd:element name="CalculateDeliveryRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="distanceKm" type="xsd:decimal"/>
+                        <xsd:element name="orderAmount" type="xsd:decimal"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="CalculateDeliveryResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="cost" type="xsd:decimal"/>
+                        <xsd:element name="currency" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </types>
+    <message name="CalculateDeliveryInput">
+        <part name="parameters" element="tns:CalculateDeliveryRequest"/>
+    </message>
+    <message name="CalculateDeliveryOutput">
+        <part name="parameters" element="tns:CalculateDeliveryResponse"/>
+    </message>
+    <portType name="DeliveryPortType">
+        <operation name="CalculateDelivery">
+            <input message="tns:CalculateDeliveryInput"/>
+            <output message="tns:CalculateDeliveryOutput"/>
+        </operation>
+    </portType>
+    <binding name="DeliveryBinding" type="tns:DeliveryPortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="CalculateDelivery">
+            <soap:operation soapAction="CalculateDelivery"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+    </binding>
+    <service name="DeliveryService">
+        <port name="DeliveryPort" binding="tns:DeliveryBinding">
+            <soap:address location="http://localhost:8081/ws/delivery"/>
+        </port>
+    </service>
+</definitions>

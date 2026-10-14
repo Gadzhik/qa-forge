@@ -1,0 +1,52 @@
+// Параметризованный пайплайн: выбор стенда, набора тестов и браузера при запуске (урок 15.8)
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'ENV', choices: ['local', 'stage'], description: 'Стенд')
+        string(name: 'SHOP_URL', defaultValue: 'http://localhost:8081', description: 'Адрес QA Burger')
+        choice(name: 'TAGS', choices: ['smoke', 'regression', 'smoke | regression'], description: 'Какие тесты (JUnit-теги)')
+        choice(name: 'BROWSER', choices: ['chrome', 'firefox'], description: 'Браузер для UI-тестов')
+        booleanParam(name: 'HEADLESS', defaultValue: true, description: 'Без окна браузера')
+        string(name: 'THREADS', defaultValue: '3', description: 'Потоков для параллельного запуска')
+    }
+
+    tools {
+        jdk 'jdk21'
+    }
+
+    options {
+        timeout(time: 60, unit: 'MINUTES')     // убить зависший прогон
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+    }
+
+    stages {
+        stage('Информация') {
+            steps {
+                echo "Стенд: ${params.ENV}, адрес: ${params.SHOP_URL}, теги: ${params.TAGS}, браузер: ${params.BROWSER}"
+            }
+        }
+        stage('Тесты') {
+            steps {
+                script {
+                    def cmd = "-B -f exercises/m14-framework/pom.xml test " +
+                              "-Dshop.url=${params.SHOP_URL} " +
+                              "\"-Dgroups=${params.TAGS}\" " +
+                              "-Dselenide.browser=${params.BROWSER} -Dselenide.headless=${params.HEADLESS} " +
+                              "-Djunit.jupiter.execution.parallel.config.fixed.parallelism=${params.THREADS}"
+                    if (isUnix()) { sh "./mvnw ${cmd}" } else { bat "mvnw.cmd ${cmd}" }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            junit testResults: 'exercises/m14-framework/target/surefire-reports/*.xml', allowEmptyResults: true
+            allure results: [[path: 'exercises/m14-framework/target/allure-results']]
+        }
+        failure {
+            echo 'Есть упавшие тесты — смотрите отчёт Allure'
+        }
+    }
+}

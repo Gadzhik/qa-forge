@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/layout :: head('Мышь: наведение, клики')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+<a href="/playground" data-testid="back-to-playground">← Песочница</a>
+<h1>Мышь: наведение, клики</h1>
+<div style="min-height:140px">
+<div class="hover-menu" data-testid="hover-menu">
+  <span class="hover-menu__title" id="hover-target" data-testid="hover-target">Наведи на меня</span>
+  <div class="hover-menu__items" data-testid="hover-items">
+    <a href="#" data-testid="hover-item">Бургеры</a><a href="#" data-testid="hover-item">Напитки</a>
+  </div>
+</div>
+</div>
+<p><button class="btn" id="double-click-btn" data-testid="double-click-btn"
+   ondblclick="document.getElementById('mouse-result').textContent='двойной клик'">Двойной клик</button>
+<button class="btn" id="right-click-btn" data-testid="right-click-btn"
+   oncontextmenu="event.preventDefault(); document.getElementById('mouse-result').textContent='правый клик'">Правый клик</button></p>
+<p>Результат: <b id="mouse-result" data-testid="mouse-result"></b></p>
+<p><label>Нажмите клавишу в поле: <input id="key-input" data-testid="key-input"
+   onkeydown="document.getElementById('key-result').textContent = event.key"></label>
+   Последняя клавиша: <b id="key-result" data-testid="key-result"></b></p>
+</main>
+</body>
+</html>

@@ -1,0 +1,3 @@
+title: "Базы данных: SQL, PostgreSQL, JDBC"
+summary: "Таблицы и связи, SELECT, JOIN, группировка, изменение данных и транзакции, PostgreSQL в Docker, DBeaver, JDBC и HikariCP, проверки в БД из автотестов"
+icon: "🗄️"
